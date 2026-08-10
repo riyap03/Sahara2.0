@@ -1,24 +1,48 @@
 // Fallback for using MaterialIcons on Android and web.
 
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { SymbolWeight, SymbolViewProps } from 'expo-symbols';
 import { ComponentProps } from 'react';
 import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
 
-type IconMapping = Record<SymbolViewProps['name'], ComponentProps<typeof MaterialIcons>['name']>;
-type IconSymbolName = keyof typeof MAPPING;
+// Standardized list of supported custom icon keys
+export type IconSymbolName =
+  | 'house.fill'
+  | 'paperplane.fill'
+  | 'chevron.left.forwardslash.chevron.right'
+  | 'chevron.right'
+  | 'people.fill'
+  | 'person.fill'
+  | 'bell.fill'
+  | 'warning.fill'
+  | 'checkmark.circle.fill'
+  | 'clock.fill'
+  | 'phone.fill'
+  | 'map.fill'
+  | 'shield.fill'
+  | 'wrench.fill'
+  | 'medkit.fill'
+  | 'exclamationmark.triangle.fill'
+  | 'person.badge.shield.checkmark.fill';
 
-/**
- * Add your SF Symbols to Material Icons mappings here.
- * - see Material Icons in the [Icons Directory](https://icons.expo.fyi).
- * - see SF Symbols in the [SF Symbols](https://developer.apple.com/sf-symbols/) app.
- */
-const MAPPING = {
+const MAPPING: Record<IconSymbolName, ComponentProps<typeof MaterialIcons>['name']> = {
   'house.fill': 'home',
   'paperplane.fill': 'send',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
-} as IconMapping;
+  'people.fill': 'people',
+  'person.fill': 'person',
+  'bell.fill': 'notifications',
+  'warning.fill': 'warning',
+  'checkmark.circle.fill': 'check-circle',
+  'clock.fill': 'access-time',
+  'phone.fill': 'phone',
+  'map.fill': 'map',
+  'shield.fill': 'security',
+  'wrench.fill': 'build',
+  'medkit.fill': 'medical-services',
+  'exclamationmark.triangle.fill': 'warning',
+  'person.badge.shield.checkmark.fill': 'admin-panel-settings',
+};
 
 /**
  * An icon component that uses native SF Symbols on iOS, and Material Icons on Android and web.
@@ -35,7 +59,7 @@ export function IconSymbol({
   size?: number;
   color: string | OpaqueColorValue;
   style?: StyleProp<TextStyle>;
-  weight?: SymbolWeight;
+  weight?: string; // Add optional weight prop to support other existing code usages
 }) {
   return <MaterialIcons color={color} size={size} name={MAPPING[name]} style={style} />;
 }
