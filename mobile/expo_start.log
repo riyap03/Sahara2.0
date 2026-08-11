@@ -1,0 +1,20 @@
+Starting project at /app/mobile
+React Compiler enabled
+Metro is running in CI mode, reloads are disabled. Remove CI=true to enable watch mode.
+Starting Metro Bundler
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Web node_modules/expo-router/entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 3474ms node_modules/expo-router/node/render.js (1031 modules)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (1152/1152)
+λ node_modules/expo-router/node/render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 93.1% ( 985/1031)
+λ  WARN  [Layout children]: No route named "requests" exists in nested children: [ 'explore', 'index' ]
+λ  WARN  [Layout children]: No route named "trusted" exists in nested children: [ 'explore', 'index' ]
+λ  WARN  [Layout children]: No route named "profile" exists in nested children: [ 'explore', 'index' ]
+λ  WARN  props.pointerEvents is deprecated. Use style.pointerEvents
+Web Bundled 5411ms node_modules/expo-router/entry.js (1152 modules)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓░░░░░░░░░░░ 35.1% ( 62/232)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓░░░░░░░░░ 45.9% (409/635)
+Web node_modules/expo-router/entry.js ▓▓▓▓▓▓▓▓▓▓▓▓░░░░ 76.7% (789/901)
+Web Bundled 11221ms node_modules/expo-router/entry.js (1153 modules)
+ LOG  [web] Logs will appear in the browser console
