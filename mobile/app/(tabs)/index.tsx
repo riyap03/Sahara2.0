@@ -1,7 +1,17 @@
-import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, Alert, Dimensions, ActivityIndicator } from 'react-native';
-import { Image } from 'expo-image';
+import React, { useState } from 'react';
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  SafeAreaView,
+  StatusBar,
+  TextInput,
+} from 'react-native';
 import { Link } from 'expo-router';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useRole } from '../context/RoleContext';
 
 // Imports from the original starter home screen
 import { HelloWave } from '../../components/hello-wave';
@@ -16,355 +26,55 @@ import { globalStore } from '../../constants/store';
 const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
-  // Mode switcher: default to 'elder' to showcase senior accessibility target,
-  // but allow toggling to 'developer' to render 100% of the original starter screen from main.
-  const [appMode, setAppMode] = useState<'elder' | 'developer'>('elder');
+  const {
+    role,
+    setRole,
+    isAvailable,
+    setIsAvailable,
+    demoStep,
+    setDemoStep,
+    isEmergencyAlertActive,
+    setIsEmergencyAlertActive,
+  } = useRole();
 
-  const [lang, setLang] = useState(globalStore.getLanguage());
-  const [demoState, setDemoState] = useState(globalStore.getDemoState());
-  const [inputText, setInputText] = useState(globalStore.getDemoInputText());
-  const [scenario, setScenario] = useState(globalStore.getScenario());
-  const [currentRating, setCurrentRating] = useState(globalStore.getActiveRating());
-  const [showSosModal, setShowSosModal] = useState(false);
-  const [sosConfirmed, setSosConfirmed] = useState(false);
+  const [otpValue, setOtpValue] = useState('');
+  const [isFamilyEmergencyActive, setIsFamilyEmergencyActive] = useState(false);
 
-  // Waveform animation simulation
-  const [waveHeights, setWaveHeights] = useState([20, 40, 15, 30, 45, 10, 25, 35, 15, 20]);
-
-  useEffect(() => {
-    return globalStore.subscribe(() => {
-      setLang(globalStore.getLanguage());
-      setDemoState(globalStore.getDemoState());
-      setInputText(globalStore.getDemoInputText());
-      setScenario(globalStore.getScenario());
-      setCurrentRating(globalStore.getActiveRating());
-    });
-  }, []);
-
-  // Simulate sound wave movement when listening
-  useEffect(() => {
-    let interval: any;
-    if (demoState === 'listening') {
-      interval = setInterval(() => {
-        setWaveHeights(prev => prev.map(() => Math.floor(Math.random() * 50) + 10));
-      }, 150);
-    }
-    return () => clearInterval(interval);
-  }, [demoState]);
-
-  // English & Hindi Translations mapping
-  const t = {
-    hi: {
-      namaste: 'नमस्ते, शांति जी 👋',
-      tagline: 'आपको किस चीज़ में मदद चाहिए?',
-      micBtn: 'बोलकर बताएं',
-      micSub: '"मुझे क्या चाहिए?"',
-      currentRequest: '🟢 चालू अनुरोध (Active Help)',
-      currentRequestPlumber: 'प्लंबर आ रहा है - समय: 10 मिनट',
-      emergencyBtn: '🆘 आपातकालीन (SOS)',
-      categories: 'या नीचे से एक काम चुनें:',
-      catHousehold: '🔧 घर का काम',
-      catMedicine: '💊 दवाई (Medicine)',
-      catDoctor: '🏥 डॉक्टर / अस्पताल',
-      catGrocery: '🛒 राशन (Grocery)',
-      catTravel: '🚗 सफ़र (Travel)',
-      catEmergency: '🆘 इमरजेंसी',
-
-      listening: '🎙️ सुन रहा हूँ (Listening)...',
-      speakNow: 'कृपया आप बोलना शुरू करें:',
-      speakPrompt1: '"मुझे प्लंबर चाहिए"',
-      speakPrompt2: '"कल डॉक्टर के पास जाना है"',
-      speakPrompt3: '"दवाई ला दो"',
-      stopBtn: '🛑 रोकें (Stop)',
-
-      suna: 'मैंने सुना:',
-      sahiHai: 'क्या यह सही है?',
-      btnHaan: '✓ हाँ, सही है',
-      btnBadlein: '✏️ बदलें',
-
-      intentTitle: 'AI विश्लेषण (Intent Detected)',
-      intentCategory: 'श्रेणी (Category)',
-      intentSkill: 'ज़रूरी कौशल (Skill)',
-      intentPriority: 'प्राथमिकता (Priority)',
-      intentLocation: 'पता (Location)',
-      intentHome: 'शांति जी का पंजीकृत घर',
-      btnConfirmIntent: 'सही है, आगे बढ़ें ✓',
-
-      confirmTitle: 'मदद की पुष्टि करें',
-      confirmSubtitle: 'हम आपके सबसे भरोसेमंद उपलब्ध सहायक को ढूंढेंगे।',
-      btnSendRequest: 'मदद भेजें [SEND REQUEST]',
-      btnCancel: 'रद्द करें (Cancel)',
-
-      finding: '🔍 सहायक की खोज जारी है...',
-      checkingNetwork: 'आपके भरोसेमंद नेटवर्क की जांच कर रहे हैं',
-      nearby: '✓ आस-पास के लोग',
-      trusted: '✓ भरोसेमंद सहायक',
-      availability: '✓ उपलब्धता की जांच',
-      pleaseWait: 'कृपया प्रतीक्षा करें...',
-
-      backupTitle: 'ℹ️ आपके नियमित प्लंबर राजेश उपलब्ध नहीं हैं।',
-      backupDonotWorry: 'चिंता न करें!',
-      backupFound: 'हमें आपका अगला सबसे भरोसेमंद विकल्प मिल गया है:',
-      backupRaj: '🔧 राज प्लंबिंग',
-      backupVerified: '✓ सत्यापित प्रदाता (Verified)',
-      backupRequestBtn: 'मदद के लिए अनुरोध भेजें',
-
-      trackingTitle: '🔧 प्लंबर आ रहा है',
-      trackingStatusAccepted: '✓ अनुरोध स्वीकार कर लिया गया',
-      trackingStatusOnWay: '✓ रास्ते में है (On the Way)',
-      trackingStatusArrived: '○ पहुंच गया (Arrived)',
-      trackingStatusCompleted: '○ काम पूरा हो गया',
-      trackingEta: 'अनुमानित समय: 8 मिनट',
-      btnContactHelper: 'सहायक से बात करें',
-      btnCancelRequest: 'अनुरोध रद्द करें',
-
-      arrivedTitle: '👨 राज पहुंच गए हैं',
-      arrivedOtpPrompt: 'कृपया सहायक को काम शुरू करने के लिए OTP पूछें:',
-      taskOtp: 'काम का OTP:',
-      arrivedVerified: '✓ सहायक सत्यापित है',
-      btnStartTask: 'काम शुरू करने की अनुमति दें',
-
-      progressTitle: '🔧 काम प्रगति पर है',
-      progressDesc: 'राज आपके प्लंबिंग के काम पर ध्यान दे रहे हैं।',
-      progressStarted: 'शुरू हुआ: शाम 6:14 बजे',
-      btnCompleteTask: 'काम पूरा हुआ (Complete)',
-
-      doneTitle: '✓ काम पूरा हुआ!',
-      doneDesc: 'आपका प्लंबिंग का काम सफलतापूर्वक समाप्त हो गया है।',
-      doneCheckout: 'राज शाम 6:42 बजे चले गए।',
-      doneRatingPrompt: 'क्या आपको मिली मदद उपयोगी लगी?',
-      btnSubmitRating: 'रेटिंग जमा करें [SUBMIT]',
-
-      sosTitle: '🚨 आपातकालीन सहायता',
-      sosPrompt: 'क्या आपको तुरंत आपातकालीन मदद की आवश्यकता है?',
-      sosYes: 'हाँ, तुरंत मदद चाहिए!',
-      sosNo: 'नहीं, रद्द करें',
-      sosSentTitle: '🚨 आपातकालीन अलर्ट भेज दिया गया है!',
-      sosSentDesc1: '✓ आपके भरोसेमंद पड़ोसी और सुरक्षा गार्ड को सूचित कर दिया गया है',
-      sosSentDesc2: '✓ आपकी बेटी किरण को संदेश भेज दिया गया है',
-      sosSentDesc3: '✓ आपातकालीन सहायता टीम सक्रिय हो गई है',
-      sosClose: 'ठीक है (Close)',
-    },
-    en: {
-      namaste: 'Namaste, Shanti ji 👋',
-      tagline: 'How can we help you today?',
-      micBtn: 'Speak to Us',
-      micSub: '"What do you need?"',
-      currentRequest: '🟢 Active Help Request',
-      currentRequestPlumber: 'Plumber is coming - ETA: 10 mins',
-      emergencyBtn: '🆘 EMERGENCY (SOS)',
-      categories: 'Or select a service below:',
-      catHousehold: '🔧 Household Repair',
-      catMedicine: '💊 Medicine Pickup',
-      catDoctor: '🏥 Doctor / Hospital',
-      catGrocery: '🛒 Grocery / Essentials',
-      catTravel: '🚗 Travel Assistance',
-      catEmergency: '🆘 Emergency Help',
-
-      listening: '🎙️ Listening...',
-      speakNow: 'Please speak now, we are listening:',
-      speakPrompt1: '"I need a plumber"',
-      speakPrompt2: '"I want to visit the doctor tomorrow"',
-      speakPrompt3: '"Get me medicine"',
-      stopBtn: '🛑 Stop',
-
-      suna: 'I heard:',
-      sahiHai: 'Is this correct?',
-      btnHaan: '✓ Yes, Correct',
-      btnBadlein: '✏️ Change',
-
-      intentTitle: 'AI Intent Detected',
-      intentCategory: 'Category',
-      intentSkill: 'Required Skill',
-      intentPriority: 'Priority',
-      intentLocation: 'Location',
-      intentHome: "Shanti's registered home",
-      btnConfirmIntent: 'Correct, Proceed ✓',
-
-      confirmTitle: 'Confirm Help Request',
-      confirmSubtitle: 'We will find your most trusted available helper.',
-      btnSendRequest: 'SEND HELP REQUEST',
-      btnCancel: 'Cancel',
-
-      finding: '🔍 Finding help...',
-      checkingNetwork: 'Checking your trusted network',
-      nearby: '✓ Nearby people',
-      trusted: '✓ Trusted providers',
-      availability: '✓ Availability status',
-      pleaseWait: 'Please wait...',
-
-      backupTitle: 'ℹ️ Your regular plumber Rajesh is unavailable.',
-      backupDonotWorry: "Don't worry.",
-      backupFound: 'We found your next trusted option:',
-      backupRaj: '🔧 Raj Plumbing',
-      backupVerified: '✓ Verified Provider',
-      backupRequestBtn: 'REQUEST HELP NOW',
-
-      trackingTitle: '🔧 Plumber is coming',
-      trackingStatusAccepted: '✓ Request accepted',
-      trackingStatusOnWay: '✓ On the way',
-      trackingStatusArrived: '○ Arrived',
-      trackingStatusCompleted: '○ Task completed',
-      trackingEta: 'Estimated arrival: 8 minutes',
-      btnContactHelper: 'Contact Helper',
-      btnCancelRequest: 'Cancel Request',
-
-      arrivedTitle: '👨 Raj has arrived',
-      arrivedOtpPrompt: 'Please ask the helper for the Task OTP:',
-      taskOtp: 'Task OTP:',
-      arrivedVerified: '✓ Helper verified',
-      btnStartTask: 'Authorize Helper to Start',
-
-      progressTitle: '🔧 Help in progress',
-      progressDesc: 'Raj is working on your plumbing issue.',
-      progressStarted: 'Started: 6:14 PM',
-      btnCompleteTask: 'Mark Task Completed',
-
-      doneTitle: '✓ Done!',
-      doneDesc: 'Your plumbing issue has been completed.',
-      doneCheckout: 'Raj checked out at 6:42 PM.',
-      doneRatingPrompt: 'Was the help useful?',
-      btnSubmitRating: 'Submit Rating [SUBMIT]',
-
-      sosTitle: '🚨 EMERGENCY ALERT',
-      sosPrompt: 'Do you need immediate help right now?',
-      sosYes: 'YES, GET HELP IMMEDIATELY',
-      sosNo: 'NO, CANCEL',
-      sosSentTitle: '🚨 Emergency Alert Sent!',
-      sosSentDesc1: '✓ Trusted nearby neighbor & guards alerted',
-      sosSentDesc2: '✓ Family (daughter Kiran) notified instantly',
-      sosSentDesc3: '✓ Emergency support services dispatched',
-      sosClose: 'Close & Dismiss',
-    },
-  }[lang];
-
-  // Helper values mapping based on scenario
-  const getHelperDetails = () => {
-    if (scenario === 'regular') {
-      return {
-        name: 'Amit Sharma',
-        type: 'Society Guard / Approved Helper',
-        rating: '4.8',
-        dist: '0.8 km',
-        eta: '10 mins',
-      };
+  // Verification helper methods
+  const handleVerifyOtp = () => {
+    if (otpValue === '1234' || otpValue.trim() === '1234') {
+      setDemoStep('verified');
+      setOtpValue('');
     } else {
-      return {
-        name: 'Raj Plumbing',
-        type: 'Ghar Ka Backup Provider',
-        rating: '4.7',
-        dist: '1.2 km',
-        eta: '8 mins',
-      };
+      alert('Incorrect OTP. Hint: Use 1234 for SIH live verification demo');
     }
-  };
-
-  const handlePresetSelect = (text: string, category: string) => {
-    globalStore.setDemoInputText(text, category);
-    globalStore.setDemoState('confirm');
-  };
-
-  const startListening = () => {
-    globalStore.setDemoState('listening');
-  };
-
-  const stopListeningSimulate = () => {
-    // Automatically simulate plumber request for direct flow
-    handlePresetSelect(
-      lang === 'hi'
-        ? 'मुझे प्लंबर चाहिए, बाथरूम का पाइप लीक हो रहा है'
-        : 'I need a plumber, bathroom pipe is leaking',
-      'household'
-    );
-  };
-
-  const handleConfirmHaan = () => {
-    globalStore.setDemoState('intent');
-  };
-
-  const handleConfirmIntent = () => {
-    globalStore.setDemoState('dispatch');
-  };
-
-  const handleSendRequest = () => {
-    globalStore.setDemoState('matching');
-    // Simulate matching search timeout
-    setTimeout(() => {
-      if (scenario === 'backup') {
-        globalStore.setDemoState('backup_warning');
-      } else {
-        globalStore.setDemoState('tracking');
-      }
-    }, 2500);
-  };
-
-  const handleAcceptBackup = () => {
-    globalStore.setDemoState('tracking');
-  };
-
-  const handleSimulateArrived = () => {
-    globalStore.setDemoState('arrived');
-  };
-
-  const handleAuthorizeStart = () => {
-    globalStore.setDemoState('progress');
-  };
-
-  const handleSimulateCompleted = () => {
-    globalStore.setDemoState('completed');
-  };
-
-  const handleSubmitRating = () => {
-    // Add completed item to requests list
-    globalStore.addRequest({
-      category: globalStore.getCategory() || 'household',
-      title: inputText,
-      status: 'Completed',
-      time: lang === 'hi' ? 'अभी-अभी पूरा हुआ' : 'Just Completed',
-      helperName: scenario === 'regular' ? 'Amit Sharma' : 'Raj Plumbing',
-      rating: currentRating || 5,
-    });
-
-    // Reset demo back to idle
-    globalStore.setDemoState('idle');
-    globalStore.setDemoInputText('');
-    globalStore.setActiveRating(0);
-  };
-
-  const handleTriggerSOS = () => {
-    setShowSosModal(true);
-    setSosConfirmed(false);
-  };
-
-  const handleSosConfirm = () => {
-    setSosConfirmed(true);
-  };
-
-  const handleSosDismiss = () => {
-    setShowSosModal(false);
-    setSosConfirmed(false);
   };
 
   return (
-    <View style={mergedStyles.outerContainer}>
-      {/* 💻 Mode Switcher Header Panel: Allows toggling between Elder Mode and Developer Mode */}
-      <View style={mergedStyles.modeSwitcherPanel}>
-        <Text style={mergedStyles.modeSwitcherText}>⚙️ Select Screen Mode (पसंदीदा स्क्रीन):</Text>
-        <View style={mergedStyles.modeBtnRow}>
+    <SafeAreaView style={styles.safeArea}>
+      <StatusBar barStyle="dark-content" />
+
+      {/* Role Switcher Controller Header */}
+      <View style={styles.roleHeader}>
+        <View style={styles.roleHeaderLeft}>
+          <IconSymbol size={18} name="person.badge.shield.checkmark.fill" color="#7C3AED" />
+          <Text style={styles.roleHeaderTitle}>Ghar Ka Backup</Text>
+        </View>
+        <View style={styles.roleHeaderRight}>
           <TouchableOpacity
-            style={[mergedStyles.modeBtn, appMode === 'elder' && mergedStyles.modeBtnActive]}
-            onPress={() => setAppMode('elder')}
+            style={[styles.roleSelectBtn, role === 'family' && styles.roleSelectActiveFamily]}
+            onPress={() => setRole('family')}
           >
-            <Text style={[mergedStyles.modeBtnText, appMode === 'elder' && mergedStyles.modeBtnTextActive]}>
-              👵 Elder / Senior UI
+            <Text style={[styles.roleSelectText, role === 'family' && styles.roleSelectActiveText]}>
+              Family Mode
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[mergedStyles.modeBtn, appMode === 'developer' && mergedStyles.modeBtnActive]}
-            onPress={() => setAppMode('developer')}
+            style={[styles.roleSelectBtn, role === 'volunteer' && styles.roleSelectActiveVolunteer]}
+            onPress={() => setRole('volunteer')}
           >
-            <Text style={[mergedStyles.modeBtnText, appMode === 'developer' && mergedStyles.modeBtnTextActive]}>
-              💻 Developer / Starter UI
+            <Text style={[styles.roleSelectText, role === 'volunteer' && styles.roleSelectActiveText]}>
+              Helper Mode
             </Text>
           </TouchableOpacity>
         </View>
@@ -590,1137 +300,1642 @@ export default function HomeScreen() {
                     activeOpacity={0.8}
                   >
                     <Text style={mergedStyles.btnHaanText}>{t.btnHaan}</Text>
-                  </TouchableOpacity>
+      {/* ========================================================= */}
+      {/* ==================== 1. FAMILY VIEW ==================== */}
+      {/* ========================================================= */}
+      {role === 'family' && (
+        <View style={styles.viewWrapper}>
+          {/* Simulation Banner */}
+          <View style={styles.simulationBanner}>
+            <Text style={styles.simulationText}>
+              {isFamilyEmergencyActive ? '🚨 EMERGENCY ACTIVE (SIMULATION)' : '🟢 NORMAL STATUS'}
+            </Text>
+            <TouchableOpacity
+              style={[styles.simulationButton, isFamilyEmergencyActive ? styles.btnNormal : styles.btnEmergency]}
+              onPress={() => setIsFamilyEmergencyActive(!isFamilyEmergencyActive)}
+            >
+              <Text style={styles.simulationButtonText}>
+                {isFamilyEmergencyActive ? 'Reset to Safe Mode' : 'Simulate Emergency Alert'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+            {/* Header Section */}
+            <View style={styles.headerContainer}>
+              <View style={styles.headerLeft}>
+                <Text style={styles.brandTitle}>Ghar Ka Backup</Text>
+                <Text style={styles.seniorNames}>Mom & Dad</Text>
+                <View style={styles.locationContainer}>
+                  <IconSymbol size={16} name="map.fill" color="#666" style={styles.miniIcon} />
+                  <Text style={styles.locationText}>Jaipur</Text>
                 </View>
               </View>
-            )}
 
-            {/* State 3: AI INTENT DETECTION BOX */}
-            {demoState === 'intent' && (
-              <View style={mergedStyles.stateCard}>
-                <Text style={mergedStyles.stateTitle}>{t.intentTitle}</Text>
-
-                <View style={mergedStyles.intentBox}>
-                  <View style={mergedStyles.intentRow}>
-                    <Text style={mergedStyles.intentLabel}>{t.intentCategory}:</Text>
-                    <Text style={mergedStyles.intentValue}>HOUSEHOLD REPAIR</Text>
-                  </View>
-                  <View style={mergedStyles.intentRow}>
-                    <Text style={mergedStyles.intentLabel}>{t.intentSkill}:</Text>
-                    <Text style={mergedStyles.intentValue}>PLUMBING</Text>
-                  </View>
-                  <View style={mergedStyles.intentRow}>
-                    <Text style={mergedStyles.intentLabel}>{t.intentPriority}:</Text>
-                    <Text style={[mergedStyles.intentValue, { color: '#E65100' }]}>NORMAL</Text>
-                  </View>
-                  <View style={mergedStyles.intentRow}>
-                    <Text style={mergedStyles.intentLabel}>{t.intentLocation}:</Text>
-                    <Text style={mergedStyles.intentValue}>{t.intentHome}</Text>
-                  </View>
-                </View>
-
-                <TouchableOpacity
-                  style={mergedStyles.actionButton}
-                  onPress={handleConfirmIntent}
-                  activeOpacity={0.8}
-                >
-                  <Text style={mergedStyles.actionButtonText}>{t.btnConfirmIntent}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* State 4: CONFIRM DISPATCH */}
-            {demoState === 'dispatch' && (
-              <View style={mergedStyles.stateCard}>
-                <Text style={mergedStyles.stateTitle}>{t.confirmTitle}</Text>
-                <Text style={mergedStyles.stateDesc}>{t.confirmSubtitle}</Text>
-
-                <View style={mergedStyles.confirmSummaryBox}>
-                  <View style={mergedStyles.summaryItem}>
-                    <Text style={mergedStyles.summaryEmoji}>🔧</Text>
-                    <Text style={mergedStyles.summaryText}>{inputText}</Text>
-                  </View>
-                  <View style={mergedStyles.summaryItem}>
-                    <Text style={mergedStyles.summaryEmoji}>📍</Text>
-                    <Text style={mergedStyles.summaryText}>{t.intentHome}</Text>
-                  </View>
-                </View>
-
-                <TouchableOpacity
-                  style={mergedStyles.actionButton}
-                  onPress={handleSendRequest}
-                  activeOpacity={0.8}
-                >
-                  <Text style={mergedStyles.actionButtonText}>{t.btnSendRequest}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={mergedStyles.cancelBtnTextOnly}
-                  onPress={() => globalStore.setDemoState('idle')}
-                  activeOpacity={0.7}
-                >
-                  <Text style={mergedStyles.cancelTextOnly}>{t.btnCancel}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* State 5: MATCHING ENGINE IN SEARCH */}
-            {demoState === 'matching' && (
-              <View style={mergedStyles.stateCard}>
-                <Text style={mergedStyles.stateTitle}>{t.finding}</Text>
-                <ActivityIndicator size="large" color="#2E7D32" style={mergedStyles.loader} />
-                <Text style={mergedStyles.stateSubtitle}>{t.checkingNetwork}</Text>
-
-                <View style={mergedStyles.matchingChecks}>
-                  <Text style={mergedStyles.checkItem}>{t.nearby}</Text>
-                  <Text style={mergedStyles.checkItem}>{t.trusted}</Text>
-                  <Text style={mergedStyles.checkItem}>{t.availability}</Text>
-                </View>
-
-                <Text style={mergedStyles.pleaseWaitText}>{t.pleaseWait}</Text>
-              </View>
-            )}
-
-            {/* State 6: BACKUP WARNING / ACTIVATION (USP) */}
-            {demoState === 'backup_warning' && (
-              <View style={[mergedStyles.stateCard, mergedStyles.backupCard]}>
-                <Text style={mergedStyles.backupTitleText}>{t.backupTitle}</Text>
-                <Text style={mergedStyles.backupDorryText}>{t.backupDonotWorry}</Text>
-                <Text style={mergedStyles.backupFoundText}>{t.backupFound}</Text>
-
-                <View style={mergedStyles.backupHelperBox}>
-                  <View style={mergedStyles.avatarCircleSmall}>
-                    <Text style={mergedStyles.avatarEmojiSmall}>🔧</Text>
-                  </View>
-                  <View style={mergedStyles.backupDetails}>
-                    <Text style={mergedStyles.backupHelperName}>{t.backupRaj}</Text>
-                    <Text style={mergedStyles.backupVerifiedText}>{t.backupVerified}</Text>
-                    <Text style={mergedStyles.backupRating}>⭐ 4.7 (1.2 km away)</Text>
-                  </View>
-                </View>
-
-                <TouchableOpacity
-                  style={[mergedStyles.actionButton, mergedStyles.backupBtn]}
-                  onPress={handleAcceptBackup}
-                  activeOpacity={0.8}
-                >
-                  <Text style={mergedStyles.actionButtonText}>{t.backupRequestBtn}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* State 7: ACTIVE REQUEST TRACKING */}
-            {demoState === 'tracking' && (
-              <View style={mergedStyles.stateCard}>
-                <Text style={mergedStyles.stateTitle}>{t.trackingTitle}</Text>
-
-                <View style={mergedStyles.helperProfileCard}>
-                  <Text style={mergedStyles.helperAvatarLarge}>👨</Text>
-                  <Text style={mergedStyles.helperNameLarge}>{getHelperDetails().name}</Text>
-                  <Text style={mergedStyles.helperType}>{getHelperDetails().type}</Text>
-                  <Text style={mergedStyles.helperRatingBadge}>⭐ {getHelperDetails().rating}</Text>
-                  <Text style={mergedStyles.helperEta}>{t.trackingEta}</Text>
-                </View>
-
-                <View style={mergedStyles.trackingTimeline}>
-                  <Text style={mergedStyles.timelineItemActive}>{t.trackingStatusAccepted}</Text>
-                  <Text style={mergedStyles.timelineItemActive}>{t.trackingStatusOnWay}</Text>
-                  <Text style={mergedStyles.timelineItemInactive}>{t.trackingStatusArrived}</Text>
-                  <Text style={mergedStyles.timelineItemInactive}>{t.trackingStatusCompleted}</Text>
-                </View>
-
-                {/* Quick action to move demo along */}
-                <TouchableOpacity
-                  style={mergedStyles.demoNextBtn}
-                  onPress={handleSimulateArrived}
-                >
-                  <Text style={mergedStyles.demoNextBtnText}>[Simulate Helper Arrival / आ गया]</Text>
-                </TouchableOpacity>
-
-                <View style={mergedStyles.trackingButtons}>
-                  <TouchableOpacity
-                    style={mergedStyles.contactBtn}
-                    onPress={() => Alert.alert(lang === 'hi' ? 'फ़ोन लगाया जा रहा है...' : 'Calling...', getHelperDetails().name)}
-                    activeOpacity={0.8}
-                  >
-                    <IconSymbol size={24} name="phone.fill" color="#FFFFFF" />
-                    <Text style={mergedStyles.contactBtnText}>{t.btnContactHelper}</Text>
-                  </TouchableOpacity>
-                </View>
-              </View>
-            )}
-
-            {/* State 8: HELPER ARRIVED (OTP EXPOSURE) */}
-            {demoState === 'arrived' && (
-              <View style={mergedStyles.stateCard}>
-                <Text style={mergedStyles.stateTitle}>{t.arrivedTitle}</Text>
-                <Text style={mergedStyles.stateDesc}>{t.arrivedOtpPrompt}</Text>
-
-                <View style={mergedStyles.otpCard}>
-                  <Text style={mergedStyles.otpLabel}>{t.taskOtp}</Text>
-                  <View style={mergedStyles.otpDigitsContainer}>
-                    <Text style={mergedStyles.otpDigit}>4</Text>
-                    <Text style={mergedStyles.otpDigit}>8</Text>
-                    <Text style={mergedStyles.otpDigit}>2</Text>
-                    <Text style={mergedStyles.otpDigit}>1</Text>
-                  </View>
-                  <Text style={mergedStyles.otpVerifiedText}>{t.arrivedVerified}</Text>
-                </View>
-
-                <TouchableOpacity
-                  style={mergedStyles.actionButton}
-                  onPress={handleAuthorizeStart}
-                  activeOpacity={0.8}
-                >
-                  <Text style={mergedStyles.actionButtonText}>{t.btnStartTask}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* State 9: TASK IN PROGRESS */}
-            {demoState === 'progress' && (
-              <View style={mergedStyles.stateCard}>
-                <Text style={mergedStyles.stateTitle}>{t.progressTitle}</Text>
-                <Text style={mergedStyles.stateDesc}>{t.progressDesc}</Text>
-
-                <View style={mergedStyles.progressAnimationBox}>
-                  <ActivityIndicator size="large" color="#2E7D32" />
-                  <Text style={mergedStyles.progressStartedText}>{t.progressStarted}</Text>
-                </View>
-
-                <TouchableOpacity
-                  style={mergedStyles.actionButton}
-                  onPress={handleSimulateCompleted}
-                  activeOpacity={0.8}
-                >
-                  <Text style={mergedStyles.actionButtonText}>{t.btnCompleteTask}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* State 10: TASK COMPLETED & STAR RATING */}
-            {demoState === 'completed' && (
-              <View style={mergedStyles.stateCard}>
-                <Text style={mergedStyles.stateTitle}>{t.doneTitle}</Text>
-                <Text style={mergedStyles.stateDesc}>{t.doneDesc}</Text>
-                <Text style={mergedStyles.checkoutText}>{t.doneCheckout}</Text>
-
-                <View style={mergedStyles.ratingBox}>
-                  <Text style={mergedStyles.ratingTitle}>{t.doneRatingPrompt}</Text>
-
-                  <View style={mergedStyles.starsContainer}>
-                    {[1, 2, 3, 4, 5].map((star) => (
-                      <TouchableOpacity
-                        key={star}
-                        onPress={() => globalStore.setActiveRating(star)}
-                        activeOpacity={0.7}
-                      >
-                        <Text style={[mergedStyles.ratingStar, star <= currentRating ? mergedStyles.starOn : mergedStyles.starOff]}>
-                          ★
-                        </Text>
-                      </TouchableOpacity>
-                    ))}
-                  </View>
-                </View>
-
-                <TouchableOpacity
-                  style={mergedStyles.actionButton}
-                  onPress={handleSubmitRating}
-                  activeOpacity={0.8}
-                >
-                  <Text style={mergedStyles.actionButtonText}>{t.btnSubmitRating}</Text>
-                </TouchableOpacity>
-              </View>
-            )}
-
-            {/* Beautiful empty spacer to ensure list contents never overlap with sticky SOS button */}
-            <View style={{ height: 120 }} />
-          </ScrollView>
-
-          {/* Persistent SOS Emergency Trigger Button */}
-          <TouchableOpacity
-            style={mergedStyles.sosStickyBtn}
-            onPress={handleTriggerSOS}
-            activeOpacity={0.9}
-          >
-            <Text style={mergedStyles.sosStickyBtnText}>{t.emergencyBtn}</Text>
-          </TouchableOpacity>
-
-          {/* Emergency SOS Overlay Modal */}
-          {showSosModal && (
-            <View style={mergedStyles.sosModalOverlay}>
-              <View style={[mergedStyles.sosModalContent, sosConfirmed && mergedStyles.sosConfirmedBg]}>
-                {!sosConfirmed ? (
-                  <>
-                    <Text style={mergedStyles.sosEmojiLarge}>🚨</Text>
-                    <Text style={mergedStyles.sosModalTitle}>{t.sosTitle}</Text>
-                    <Text style={mergedStyles.sosModalPrompt}>{t.sosPrompt}</Text>
-
-                    <TouchableOpacity
-                      style={mergedStyles.sosConfirmBtn}
-                      onPress={handleSosConfirm}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={mergedStyles.sosConfirmBtnText}>{t.sosYes}</Text>
-                    </TouchableOpacity>
-
-                    <TouchableOpacity
-                      style={mergedStyles.sosCancelBtn}
-                      onPress={handleSosDismiss}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={mergedStyles.sosCancelBtnText}>{t.sosNo}</Text>
-                    </TouchableOpacity>
-                  </>
-                ) : (
-                  <>
-                    <Text style={mergedStyles.sosEmojiLarge}>✓</Text>
-                    <Text style={mergedStyles.sosSentTitle}>{t.sosSentTitle}</Text>
-
-                    <View style={mergedStyles.sosBulletList}>
-                      <Text style={mergedStyles.sosBulletItem}>{t.sosSentDesc1}</Text>
-                      <Text style={mergedStyles.sosBulletItem}>{t.sosSentDesc2}</Text>
-                      <Text style={mergedStyles.sosBulletItem}>{t.sosSentDesc3}</Text>
-                    </View>
-
-                    <TouchableOpacity
-                      style={mergedStyles.sosCloseBtn}
-                      onPress={handleSosDismiss}
-                      activeOpacity={0.8}
-                    >
-                      <Text style={mergedStyles.sosCloseBtnText}>{t.sosClose}</Text>
-                    </TouchableOpacity>
-                  </>
-                )}
+              <View style={[styles.statusBadge, isFamilyEmergencyActive ? styles.badgeAlert : styles.badgeSafe]}>
+                <View style={[styles.statusDot, isFamilyEmergencyActive ? styles.dotAlert : styles.dotSafe]} />
+                <Text style={[styles.statusBadgeText, isFamilyEmergencyActive ? styles.textAlert : styles.textSafe]}>
+                  {isFamilyEmergencyActive ? 'Action Required' : 'No action required'}
+                </Text>
               </View>
             </View>
-          )}
+
+            {/* EMERGENCY ALERT SECTION (Dynamic) */}
+            {isFamilyEmergencyActive && (
+              <View style={styles.emergencyCard}>
+                <View style={styles.emergencyHeader}>
+                  <IconSymbol size={24} name="exclamationmark.triangle.fill" color="#fff" />
+                  <Text style={styles.emergencyHeaderTitle}>🚨 EMERGENCY</Text>
+                </View>
+                <View style={styles.emergencyBody}>
+                  <Text style={styles.emergencyAlertText}>
+                    Mom has requested urgent assistance.
+                  </Text>
+
+                  <View style={styles.emergencyHighlightBox}>
+                    <Text style={styles.emergencySubTitle}>Nearby Trusted Contact</Text>
+                    <Text style={styles.emergencyContactName}>Amit Sharma — 0.6 km</Text>
+                    <Text style={styles.emergencyContactRole}>Neighbour (Available 🟢)</Text>
+                  </View>
+
+                  <View style={styles.escalationRow}>
+                    <View style={styles.checklistRow}>
+                      <IconSymbol size={18} name="checkmark.circle.fill" color="#fff" />
+                      <Text style={styles.checklistText}>Family notified</Text>
+                    </View>
+                    <View style={styles.checklistRow}>
+                      <IconSymbol size={18} name="checkmark.circle.fill" color="#fff" />
+                      <Text style={styles.checklistText}>Emergency escalation: Active</Text>
+                    </View>
+                  </View>
+
+                  <Link href="/explore" asChild>
+                    <TouchableOpacity style={styles.emergencyButton}>
+                      <Text style={styles.emergencyButtonText}>[ View Emergency Info ]</Text>
+                    </TouchableOpacity>
+                  </Link>
+                </View>
+              </View>
+            )}
+
+            {/* Philosophy Core Answers Box */}
+            <View style={styles.philosophyContainer}>
+              <Text style={styles.philosophyHeader}>At a Glance</Text>
+              <View style={styles.philosophyGrid}>
+                <View style={styles.philosophyItem}>
+                  <Text style={styles.philosophyLabel}>Everything Okay?</Text>
+                  <Text style={[styles.philosophyValue, isFamilyEmergencyActive ? styles.philosophyDanger : styles.philosophySuccess]}>
+                    {isFamilyEmergencyActive ? 'No, Urgent Alert' : 'Yes, Mom & Dad Safe'}
+                  </Text>
+                </View>
+                <View style={styles.philosophyItem}>
+                  <Text style={styles.philosophyLabel}>What Happened?</Text>
+                  <Text style={styles.philosophyValue}>
+                    {isFamilyEmergencyActive ? 'Panic alarm triggered' : 'Water pump repairs done'}
+                  </Text>
+                </View>
+                <View style={styles.philosophyItem}>
+                  <Text style={styles.philosophyLabel}>Who is Handling?</Text>
+                  <Text style={styles.philosophyValue}>
+                    {isFamilyEmergencyActive ? 'Neighbour Amit Sharma' : 'Plumber Plumb-Raj Team'}
+                  </Text>
+                </View>
+              </View>
+            </View>
+
+            {/* ATTENTION SECTION */}
+            <View style={styles.sectionCard}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.headerLeftRow}>
+                  <IconSymbol size={20} name="bell.fill" color="#D97706" />
+                  <Text style={styles.sectionTitle}>🔔 ATTENTION</Text>
+                </View>
+                <View style={styles.handledBadge}>
+                  <View style={styles.bulletGreen} />
+                  <Text style={styles.handledText}>Being handled</Text>
+                </View>
+              </View>
+
+              <View style={styles.attentionBody}>
+                <Text style={styles.attentionAlertTitle}>⚠️ Water Pump Issue</Text>
+                <Text style={styles.attentionText}>
+                  Primary plumber unavailable.{"\n"}
+                  Backup helper has been assigned.
+                </Text>
+                <View style={styles.helperAssignedRow}>
+                  <IconSymbol size={16} name="person.badge.shield.checkmark.fill" color="#059669" />
+                  <Text style={styles.helperAssignedText}>Backup helper assigned ✓</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* TODAY'S ACTIVITY */}
+            <View style={styles.sectionCard}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.headerLeftRow}>
+                  <IconSymbol size={20} name="checkmark.circle.fill" color="#2563EB" />
+                  <Text style={styles.sectionTitle}>📋 TODAY&apos;S ACTIVITY</Text>
+                </View>
+              </View>
+
+              <View style={styles.activityList}>
+                <View style={styles.activityRow}>
+                  <View style={styles.activityLabelCol}>
+                    <Text style={styles.activityEmoji}>💊</Text>
+                    <Text style={styles.activityName}>Medicine</Text>
+                  </View>
+                  <View style={styles.activityStatusCompleted}>
+                    <Text style={styles.completedText}>Completed ✓</Text>
+                  </View>
+                </View>
+
+                <View style={styles.activityRow}>
+                  <View style={styles.activityLabelCol}>
+                    <Text style={styles.activityEmoji}>🔧</Text>
+                    <Text style={styles.activityName}>Water Pump Repair</Text>
+                  </View>
+                  <View style={styles.activityStatusCompleted}>
+                    <Text style={styles.completedText}>Completed ✓</Text>
+                  </View>
+                </View>
+
+                <View style={styles.activityRow}>
+                  <View style={styles.activityLabelCol}>
+                    <Text style={styles.activityEmoji}>🏥</Text>
+                    <Text style={styles.activityName}>Doctor Appointment</Text>
+                  </View>
+                  <View style={styles.activityStatusUpcoming}>
+                    <Text style={styles.upcomingText}>Tomorrow — 10:00 AM</Text>
+                  </View>
+                </View>
+
+                <View style={styles.activityRow}>
+                  <View style={styles.activityLabelCol}>
+                    <Text style={styles.activityEmoji}>🚗</Text>
+                    <Text style={styles.activityName}>Hospital Transport</Text>
+                  </View>
+                  <View style={styles.activityStatusCompleted}>
+                    <Text style={styles.completedText}>Scheduled ✓</Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* TRUSTED NETWORK QUICK VIEW */}
+            <View style={styles.sectionCard}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.headerLeftRow}>
+                  <IconSymbol size={20} name="people.fill" color="#7C3AED" />
+                  <Text style={styles.sectionTitle}>👥 TRUSTED NETWORK</Text>
+                </View>
+              </View>
+
+              <View style={styles.networkBrief}>
+                <View style={styles.briefItem}>
+                  <View style={styles.briefRoleRow}>
+                    <Text style={styles.briefEmoji}>👨</Text>
+                    <Text style={styles.briefLabel}>Neighbour</Text>
+                  </View>
+                  <View style={[styles.statusIndicatorCircle, styles.circleSafe]} />
+                </View>
+
+                <View style={styles.briefItem}>
+                  <View style={styles.briefRoleRow}>
+                    <Text style={styles.briefEmoji}>🛡</Text>
+                    <Text style={styles.briefLabel}>Society Guard</Text>
+                  </View>
+                  <View style={[styles.statusIndicatorCircle, styles.circleSafe]} />
+                </View>
+
+                <View style={styles.briefItem}>
+                  <View style={styles.briefRoleRow}>
+                    <Text style={styles.briefEmoji}>🔧</Text>
+                    <Text style={styles.briefLabel}>Plumber</Text>
+                  </View>
+                  <View style={[styles.statusIndicatorCircle, styles.circleDanger]} />
+                </View>
+              </View>
+
+              <Link href="/explore" asChild>
+                <TouchableOpacity style={styles.viewNetworkBtn}>
+                  <Text style={styles.viewNetworkBtnText}>[ View Trusted Network ]</Text>
+                </TouchableOpacity>
+              </Link>
+            </View>
+
+            {/* RECENT TASKS */}
+            <View style={styles.sectionCard}>
+              <View style={styles.sectionHeader}>
+                <View style={styles.headerLeftRow}>
+                  <IconSymbol size={20} name="clock.fill" color="#4B5563" />
+                  <Text style={styles.sectionTitle}>📋 RECENT TASKS</Text>
+                </View>
+              </View>
+
+              <View style={styles.recentTasksList}>
+                <View style={styles.recentTaskItem}>
+                  <Text style={styles.recentTaskText}>Water Pump Repair</Text>
+                  <Text style={styles.recentTaskTick}>✓</Text>
+                </View>
+                <View style={styles.recentTaskItem}>
+                  <Text style={styles.recentTaskText}>Medicine Pickup</Text>
+                  <Text style={styles.recentTaskTick}>✓</Text>
+                </View>
+                <View style={styles.recentTaskItem}>
+                  <Text style={styles.recentTaskText}>Doctor Visit</Text>
+                  <Text style={styles.recentTaskTick}>✓</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* Reassurance Footer */}
+            <View style={styles.footerReassurance}>
+              <Text style={styles.reassuranceText}>
+                &ldquo;Family doesn&apos;t monitor the senior.{"\n"}Family knows that someone trusted is there when needed.&rdquo;
+              </Text>
+            </View>
+          </ScrollView>
         </View>
       )}
-    </View>
+
+      {/* ============================================================ */}
+      {/* ==================== 2. VOLUNTEER VIEW ==================== */}
+      {/* ============================================================ */}
+      {role === 'volunteer' && (
+        <View style={styles.viewWrapper}>
+          {/* Volunteer Status Banner */}
+          <View style={styles.simulationBannerVolunteer}>
+            <Text style={styles.simulationText}>
+              {isAvailable ? '🟢 AVAILABLE FOR HELP' : '🔴 OFFLINE / UNAVAILABLE'}
+            </Text>
+            <TouchableOpacity
+              style={[styles.simulationButton, isAvailable ? styles.btnNormal : styles.btnEmergency]}
+              onPress={() => {
+                setIsAvailable(!isAvailable);
+                // Reset demo steps when helper goes offline
+                if (isAvailable) setDemoStep('idle');
+              }}
+            >
+              <Text style={styles.simulationButtonText}>
+                {isAvailable ? 'Go Offline' : 'Go Online'}
+              </Text>
+            </TouchableOpacity>
+          </View>
+
+          <ScrollView contentContainerStyle={styles.scrollContainer} showsVerticalScrollIndicator={false}>
+            {/* Header Greetings */}
+            <View style={styles.volunteerGreetingBox}>
+              <Text style={styles.volunteerGreetingText}>Good Evening, Amit 👋</Text>
+              <Text style={styles.volunteerSubtitleText}>
+                {isAvailable ? 'Ready to help out in your community?' : 'You are currently not receiving care requests.'}
+              </Text>
+            </View>
+
+            {/* Trust Profile Card */}
+            <View style={styles.volunteerTrustCard}>
+              <View style={styles.trustHeaderRow}>
+                <View>
+                  <Text style={styles.trustProfileName}>Amit Sharma</Text>
+                  <Text style={styles.trustProfileTitle}>Neighbour Volunteer</Text>
+                </View>
+                <View style={styles.trustScoreBadge}>
+                  <Text style={styles.trustScoreLabel}>Trust Score</Text>
+                  <Text style={styles.trustScoreValue}>94</Text>
+                </View>
+              </View>
+              <View style={styles.trustDividers} />
+              <View style={styles.trustDetailsGrid}>
+                <View style={styles.trustBullet}>
+                  <IconSymbol size={16} name="checkmark.circle.fill" color="#10B981" />
+                  <Text style={styles.trustBulletText}>Identity Verified</Text>
+                </View>
+                <View style={styles.trustBullet}>
+                  <IconSymbol size={16} name="checkmark.circle.fill" color="#10B981" />
+                  <Text style={styles.trustBulletText}>Community Approved</Text>
+                </View>
+                <View style={styles.trustBullet}>
+                  <IconSymbol size={16} name="clock.fill" color="#4B5563" />
+                  <Text style={styles.trustBulletText}>Tasks Completed: 37</Text>
+                </View>
+                <View style={styles.trustBullet}>
+                  <IconSymbol size={16} name="shield.fill" color="#7C3AED" />
+                  <Text style={styles.trustBulletText}>Rating: ⭐ 4.8</Text>
+                </View>
+              </View>
+            </View>
+
+            {/* DEMO ENGINE TESTING TRIGGERS */}
+            {isAvailable && (
+              <View style={styles.demoEngineControls}>
+                <Text style={styles.demoEngineHeader}>SIH MATCHING DEMO EMULATOR</Text>
+                <Text style={styles.demoEngineText}>
+                  Simulate different pipeline stages to test matching and automatic backup chain:
+                </Text>
+                <View style={styles.demoEngineButtonsContainer}>
+                  <TouchableOpacity
+                    style={[styles.demoEngineBtn, demoStep === 'idle' && styles.demoEngineBtnActive]}
+                    onPress={() => setDemoStep('idle')}
+                  >
+                    <Text style={styles.demoEngineBtnText}>1. Empty State</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.demoEngineBtn, demoStep === 'received' && styles.demoEngineBtnActive]}
+                    onPress={() => setDemoStep('received')}
+                  >
+                    <Text style={styles.demoEngineBtnText}>2. Request Arrived</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.demoEngineBtn, demoStep === 'accepted' && styles.demoEngineBtnActive]}
+                    onPress={() => setDemoStep('accepted')}
+                  >
+                    <Text style={styles.demoEngineBtnText}>3. Accepted (Route)</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={[styles.demoEngineBtn, demoStep === 'arrived' && styles.demoEngineBtnActive]}
+                    onPress={() => setDemoStep('arrived')}
+                  >
+                    <Text style={styles.demoEngineBtnText}>4. Check-in (OTP)</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {/* ==================== 2.1 VOLUNTEER IDLE STATE ==================== */}
+            {isAvailable && demoStep === 'idle' && (
+              <View style={styles.idleStateCard}>
+                <IconSymbol size={48} name="bell.fill" color="#D1D5DB" />
+                <Text style={styles.idleStateTitle}>Waiting for Requests</Text>
+                <Text style={styles.idleStateText}>
+                  New tasks from nearby connected families will appear here. No action required.
+                </Text>
+              </View>
+            )}
+
+            {/* ==================== 2.2 NEW WORK REQUEST STATE ==================== */}
+            {isAvailable && demoStep === 'received' && (
+              <View style={styles.requestCard}>
+                {/* SIH Backup Chain visual indicator */}
+                <View style={styles.backupHeaderBadge}>
+                  <IconSymbol size={16} name="shield.fill" color="#fff" />
+                  <Text style={styles.backupHeaderText}>BACKUP SYSTEM ACTIVATED</Text>
+                </View>
+
+                <View style={styles.requestCardHeader}>
+                  <View style={styles.requestMainText}>
+                    <Text style={styles.avatarEmojiLarge}>👵</Text>
+                    <View>
+                      <Text style={styles.requestSeniorTitle}>Water Pump Repair</Text>
+                      <Text style={styles.requestSeniorSubtitle}>Mom & Dad • 0.8 km away</Text>
+                    </View>
+                  </View>
+                  <View style={styles.priorityBadge}>
+                    <Text style={styles.priorityText}>🟢 Normal</Text>
+                  </View>
+                </View>
+
+                <View style={styles.requestMetricsGrid}>
+                  <View style={styles.requestMetricCell}>
+                    <Text style={styles.reqMetricLabel}>Est. Travel</Text>
+                    <Text style={styles.reqMetricValue}>5 mins</Text>
+                  </View>
+                  <View style={styles.requestMetricCell}>
+                    <Text style={styles.reqMetricLabel}>Task Duration</Text>
+                    <Text style={styles.reqMetricValue}>20-30 mins</Text>
+                  </View>
+                  <View style={styles.requestMetricCell}>
+                    <Text style={styles.reqMetricLabel}>Selection Tier</Text>
+                    <Text style={[styles.reqMetricValue, { color: '#B45309', fontWeight: '700' }]}>Backup #1</Text>
+                  </View>
+                </View>
+
+                {/* SIH matching reasons */}
+                <View style={styles.matchedSection}>
+                  <Text style={styles.matchedTitle}>Why you were matched:</Text>
+                  <View style={styles.matchedChecklist}>
+                    <Text style={styles.matchedCheckitem}>✓ Primary helper unavailable (Raj Plumbing occupied 🔴)</Text>
+                    <Text style={styles.matchedCheckitem}>✓ Vetted neighbour & nearby (0.6 km)</Text>
+                    <Text style={styles.matchedCheckitem}>✓ Skills matched (Basic household assistance)</Text>
+                    <Text style={styles.matchedCheckitem}>✓ Currently online & available</Text>
+                  </View>
+                </View>
+
+                <View style={styles.requestActionsRow}>
+                  <TouchableOpacity
+                    style={styles.requestAcceptBtn}
+                    onPress={() => setDemoStep('accepted')}
+                  >
+                    <Text style={styles.requestAcceptBtnText}>Accept Request</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.requestRejectBtn}
+                    onPress={() => setDemoStep('idle')}
+                  >
+                    <Text style={styles.requestRejectBtnText}>Decline</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {/* ==================== 2.3 ACCEPTED / ROUTE SCREEN ==================== */}
+            {isAvailable && demoStep === 'accepted' && (
+              <View style={styles.requestCard}>
+                <View style={styles.activeHeaderIndicator}>
+                  <Text style={styles.activeIndicatorText}>✓ REQUEST ACCEPTED</Text>
+                </View>
+
+                <Text style={styles.acceptedCongrats}>
+                  You are now helping Mom & Dad.
+                </Text>
+
+                <View style={styles.routeDetailsBox}>
+                  <Text style={styles.routeLabel}>Task Details</Text>
+                  <Text style={styles.routeValue}>🔧 Water Pump Repair</Text>
+                  <Text style={styles.routeSubText}>
+                    Description: &ldquo;Water pump is not working since morning.&rdquo;
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.navigationButton}
+                  onPress={() => alert('Starting navigation context...')}
+                >
+                  <IconSymbol size={18} name="map.fill" color="#fff" />
+                  <Text style={styles.navigationBtnText}>🗺 Open Navigation</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={styles.arrivedButton}
+                  onPress={() => setDemoStep('arrived')}
+                >
+                  <Text style={styles.arrivedBtnText}>I&apos;ve Arrived</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* ==================== 2.4 OTP VERIFICATION ==================== */}
+            {isAvailable && demoStep === 'arrived' && (
+              <View style={styles.requestCard}>
+                <Text style={styles.otpHeaderTitle}>🔒 Task Check-In</Text>
+                <Text style={styles.otpHeaderSub}>
+                  To ensure accountability, ask Mom & Dad for the 4-digit verification OTP.
+                </Text>
+
+                <View style={styles.otpInputContainer}>
+                  <TextInput
+                    style={styles.otpInput}
+                    placeholder="E.g. 1234"
+                    placeholderTextColor="#9CA3AF"
+                    keyboardType="number-pad"
+                    maxLength={4}
+                    value={otpValue}
+                    onChangeText={setOtpValue}
+                  />
+                  <TouchableOpacity
+                    style={styles.otpVerifyBtn}
+                    onPress={handleVerifyOtp}
+                  >
+                    <Text style={styles.otpVerifyBtnText}>Verify OTP</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <Text style={styles.otpHelpHint}>
+                  💡 Demo Hint: Type <Text style={{ fontWeight: 'bold' }}>1234</Text> and tap verify.
+                </Text>
+              </View>
+            )}
+
+            {/* ==================== 2.5 IN PROGRESS STATE ==================== */}
+            {isAvailable && demoStep === 'verified' && (
+              <View style={styles.requestCard}>
+                <View style={styles.progressBadgeRow}>
+                  <View style={styles.pulseDot} />
+                  <Text style={styles.progressText}>TASK IN PROGRESS</Text>
+                </View>
+
+                <View style={styles.progressMainDetails}>
+                  <Text style={styles.progressTaskName}>🔧 Water Pump Repair</Text>
+                  <Text style={styles.progressTimeStarted}>Started: Today, 6:14 PM</Text>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.completeTaskBtn}
+                  onPress={() => setDemoStep('completed')}
+                >
+                  <Text style={styles.completeTaskBtnText}>Mark Task Completed</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* ==================== 2.6 COMPLETE CONFIRMATION ==================== */}
+            {isAvailable && demoStep === 'completed' && (
+              <View style={styles.requestCard}>
+                <Text style={styles.completedConfirmTitle}>Is the task completed?</Text>
+                <Text style={styles.completedConfirmSub}>
+                  Confirming this means the water pump issue is resolved and the senior is satisfied.
+                </Text>
+
+                <View style={styles.confirmBtnRow}>
+                  <TouchableOpacity
+                    style={styles.confirmYesBtn}
+                    onPress={() => setDemoStep('checkout')}
+                  >
+                    <Text style={styles.confirmYesText}>Yes, Complete</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={styles.confirmNoBtn}
+                    onPress={() => setDemoStep('verified')}
+                  >
+                    <Text style={styles.confirmNoText}>Not yet</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {/* ==================== 2.7 TASK SUCCESS CHECKOUT ==================== */}
+            {isAvailable && demoStep === 'checkout' && (
+              <View style={styles.requestCard}>
+                <View style={styles.checkoutSuccessIconContainer}>
+                  <IconSymbol size={48} name="checkmark.circle.fill" color="#10B981" />
+                </View>
+                <Text style={styles.checkoutTitle}>✓ Visited & Checked Out</Text>
+                <Text style={styles.checkoutSub}>
+                  Visit duration: <Text style={{ fontWeight: 'bold' }}>28 minutes</Text>.{"\n"}
+                  Your local care backup support has been successfully logged!
+                </Text>
+
+                <View style={styles.familyAlertReassuranceBox}>
+                  <Text style={styles.familyAlertReassuranceText}>
+                    📩 Family has been notified:{"\n"}
+                    &ldquo;Water pump repair completed by Amit at 6:42 PM.&rdquo;
+                  </Text>
+                </View>
+
+                <TouchableOpacity
+                  style={styles.checkoutHomeBtn}
+                  onPress={() => setDemoStep('idle')}
+                >
+                  <Text style={styles.checkoutHomeText}>Back to Home</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Reassurance Volunteer Quote Footer */}
+            <View style={styles.footerReassurance}>
+              <Text style={styles.reassuranceText}>
+                &ldquo;VettedLocalBackup. Directly coordinated. Fully accountable.&rdquo;
+              </Text>
+            </View>
+          </ScrollView>
+        </View>
+      )}
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  outerContainer: {
+  safeArea: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F3F4F6',
   },
-  modeSwitcherPanel: {
-    backgroundColor: '#1565C0',
-    padding: 12,
-    paddingTop: Platform.OS === 'ios' ? 50 : 25,
-    borderBottomWidth: 3,
-    borderColor: '#90CAF9',
-  },
-  modeSwitcherText: {
-    color: '#E3F2FD',
-    fontSize: 13,
-    fontWeight: '900',
-    textAlign: 'center',
-    marginBottom: 8,
-  },
-  modeBtnRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 10,
-  },
-  modeBtn: {
-    flex: 1,
-    backgroundColor: '#0D47A1',
-    height: 38,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#42A5F5',
-  },
-  modeBtnActive: {
+  roleHeader: {
     backgroundColor: '#FFFFFF',
-    borderColor: '#1E88E5',
-  },
-  modeBtnText: {
-    color: '#90CAF9',
-    fontSize: 12,
-    fontWeight: 'bold',
-  },
-  modeBtnTextActive: {
-    color: '#1565C0',
-    fontWeight: '900',
-  },
-  elderRoot: {
-    flex: 1,
-  },
-  devPanel: {
-    backgroundColor: '#212121',
-    padding: 10,
-    borderBottomWidth: 3,
-    borderColor: '#FFD54F',
-  },
-  devPanelText: {
-    color: '#FFD54F',
-    fontSize: 11,
-    fontWeight: '900',
-    textAlign: 'center',
-    marginBottom: 6,
-  },
-  devBtnRow: {
+    borderBottomWidth: 1,
+    borderBottomColor: '#E5E7EB',
+    paddingVertical: 12,
+    paddingHorizontal: 16,
     flexDirection: 'row',
     justifyContent: 'space-between',
-    gap: 10,
-  },
-  devBtn: {
-    flex: 1,
-    backgroundColor: '#424242',
-    height: 32,
-    borderRadius: 6,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 1.5,
-    borderColor: '#757575',
-  },
-  devBtnActive: {
-    backgroundColor: '#FFD54F',
-    borderColor: '#FFB300',
-  },
-  devBtnText: {
-    color: '#BDBDBD',
-    fontSize: 11,
-    fontWeight: 'bold',
-  },
-  devBtnTextActive: {
-    color: '#212121',
-    fontWeight: '900',
-  },
-  container: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: 20,
-    paddingBottom: 160, // Deep padding bottom to ensure list items can fully scroll clear of sticky SOS button
-  },
-  idleView: {
-    flex: 1,
-  },
-  header: {
-    marginTop: 10,
-    marginBottom: 20,
     alignItems: 'center',
   },
-  namasteText: {
-    fontSize: 32,
-    fontWeight: '900',
-    color: '#1B5E20',
-    textAlign: 'center',
-  },
-  taglineText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#424242',
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  voiceButtonContainer: {
-    alignItems: 'center',
-    marginBottom: 30,
-  },
-  voiceOuterCircle: {
-    width: 190,
-    height: 190,
-    borderRadius: 95,
-    backgroundColor: '#E8F5E9',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 4,
-    borderColor: '#A5D6A7',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 8 },
-        shadowOpacity: 0.2,
-        shadowRadius: 10,
-      },
-      android: {
-        elevation: 8,
-      },
-    }),
-  },
-  voiceInnerCircle: {
-    width: 160,
-    height: 160,
-    borderRadius: 80,
-    backgroundColor: '#2E7D32',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#1B5E20',
-  },
-  voiceEmoji: {
-    fontSize: 50,
-  },
-  voiceButtonText: {
-    color: '#FFFFFF',
-    fontSize: 20,
-    fontWeight: '900',
-    marginTop: 6,
-    textTransform: 'uppercase',
-  },
-  voiceButtonSubtext: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#666',
-    marginTop: 12,
-  },
-  presetsCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 2.5,
-    borderColor: '#E0E0E0',
-  },
-  categoryTitle: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1B5E20',
-    marginBottom: 15,
-  },
-  presetRow: {
+  roleHeaderLeft: {
     flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: 14,
-    borderBottomWidth: 1.5,
-    borderBottomColor: '#EEEEEE',
-    minHeight: 52,
-  },
-  presetText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#212121',
-  },
-  stateCard: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 24,
-    borderWidth: 3,
-    borderColor: '#2E7D32',
-    marginTop: 10,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 6 },
-        shadowOpacity: 0.15,
-        shadowRadius: 8,
-      },
-      android: {
-        elevation: 6,
-      },
-    }),
-  },
-  stateTitle: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: '#1B5E20',
-    textAlign: 'center',
-    marginBottom: 10,
-  },
-  stateSubtitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#424242',
-    textAlign: 'center',
-    marginTop: 15,
-    marginBottom: 15,
-  },
-  stateDesc: {
-    fontSize: 16,
-    color: '#555555',
-    textAlign: 'center',
-    marginBottom: 20,
-    fontWeight: 'bold',
-  },
-  waveformContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    height: 80,
-    gap: 6,
-    marginBottom: 25,
-  },
-  waveBar: {
-    width: 6,
-    backgroundColor: '#2E7D32',
-    borderRadius: 3,
-  },
-  simInputsBox: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 25,
-    borderWidth: 1.5,
-    borderColor: '#E0E0E0',
-  },
-  simInputsTitle: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: '#666',
-    marginBottom: 8,
-  },
-  simInputBtn: {
-    backgroundColor: '#E8F5E9',
-    padding: 10,
-    borderRadius: 8,
-    marginBottom: 8,
-    borderWidth: 1,
-    borderColor: '#A5D6A7',
-  },
-  simInputBtnText: {
-    color: '#1B5E20',
-    fontSize: 15,
-    fontWeight: 'bold',
-  },
-  stopButton: {
-    backgroundColor: '#D32F2F',
-    height: 54,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#C62828',
-  },
-  stopButtonText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  transcriptionBox: {
-    backgroundColor: '#E8F5E9',
-    borderRadius: 16,
-    padding: 20,
-    marginVertical: 15,
-    borderWidth: 2,
-    borderColor: '#81C784',
-  },
-  transcriptionText: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#1B5E20',
-    textAlign: 'center',
-    lineHeight: 30,
-  },
-  confirmButtonsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 15,
-    marginTop: 10,
-  },
-  confirmBtn: {
-    flex: 1,
-    height: 60,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-  },
-  btnBadlein: {
-    backgroundColor: '#FFFFFF',
-    borderColor: '#757575',
-  },
-  btnBadleinText: {
-    color: '#424242',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  btnHaan: {
-    backgroundColor: '#2E7D32',
-    borderColor: '#1B5E20',
-  },
-  btnHaanText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: 'bold',
-  },
-  intentBox: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 16,
-    padding: 18,
-    marginBottom: 20,
-    borderWidth: 1.5,
-    borderColor: '#E0E0E0',
-    gap: 10,
-  },
-  intentRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    paddingVertical: 4,
-  },
-  intentLabel: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#666',
-  },
-  intentValue: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#212121',
-  },
-  actionButton: {
-    backgroundColor: '#2E7D32',
-    height: 60,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#1B5E20',
-  },
-  actionButtonText: {
-    color: '#FFFFFF',
-    fontSize: 19,
-    fontWeight: 'bold',
-  },
-  confirmSummaryBox: {
-    backgroundColor: '#E8F5E9',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 25,
-    borderWidth: 1.5,
-    borderColor: '#81C784',
-    gap: 12,
-  },
-  summaryItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  summaryEmoji: {
-    fontSize: 26,
-    marginRight: 12,
-  },
-  summaryText: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#1B5E20',
-    flex: 1,
-  },
-  cancelBtnTextOnly: {
-    alignItems: 'center',
-    marginTop: 15,
-  },
-  cancelTextOnly: {
-    color: '#D32F2F',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  loader: {
-    marginVertical: 20,
-  },
-  matchingChecks: {
-    backgroundColor: '#F9F9F9',
-    borderRadius: 12,
-    padding: 15,
-    marginVertical: 15,
-    borderWidth: 1,
-    borderColor: '#E0E0E0',
     gap: 8,
   },
-  checkItem: {
+  roleHeaderTitle: {
     fontSize: 16,
-    color: '#2E7D32',
-    fontWeight: 'bold',
-  },
-  pleaseWaitText: {
-    fontSize: 15,
-    color: '#666',
-    textAlign: 'center',
-    fontWeight: '600',
-  },
-  backupCard: {
-    borderColor: '#FFA000',
-    backgroundColor: '#FFFDE7',
-  },
-  backupTitleText: {
-    fontSize: 19,
-    fontWeight: '900',
-    color: '#E65100',
-    textAlign: 'center',
-  },
-  backupDorryText: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#2E7D32',
-    textAlign: 'center',
-    marginTop: 8,
-  },
-  backupFoundText: {
-    fontSize: 16,
-    color: '#424242',
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginTop: 10,
-    marginBottom: 15,
-  },
-  backupHelperBox: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderWidth: 2,
-    borderColor: '#FFA000',
-    marginBottom: 20,
-  },
-  avatarCircleSmall: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: '#FFF3E0',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  avatarEmojiSmall: {
-    fontSize: 24,
-  },
-  backupDetails: {
-    marginLeft: 15,
-    flex: 1,
-  },
-  backupHelperName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#212121',
-  },
-  backupVerifiedText: {
-    color: '#2E7D32',
-    fontSize: 13,
-    fontWeight: 'bold',
-    marginTop: 2,
-  },
-  backupRating: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: '600',
-    marginTop: 2,
-  },
-  backupBtn: {
-    backgroundColor: '#FF9800',
-    borderColor: '#E65100',
-  },
-  helperProfileCard: {
-    backgroundColor: '#E8F5E9',
-    borderRadius: 16,
-    padding: 15,
-    alignItems: 'center',
-    marginBottom: 20,
-    borderWidth: 2,
-    borderColor: '#81C784',
-  },
-  helperAvatarLarge: {
-    fontSize: 48,
-  },
-  helperNameLarge: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#1B5E20',
-    marginTop: 5,
-  },
-  helperType: {
-    fontSize: 14,
-    color: '#666',
-    fontWeight: 'bold',
-    marginTop: 2,
-  },
-  helperRatingBadge: {
-    fontSize: 15,
-    fontWeight: 'bold',
-    color: '#E65100',
-    marginTop: 4,
-  },
-  helperEta: {
-    fontSize: 18,
-    fontWeight: '900',
-    color: '#2E7D32',
-    marginTop: 8,
-  },
-  trackingTimeline: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 12,
-    padding: 15,
-    marginBottom: 15,
-    gap: 8,
-  },
-  timelineItemActive: {
-    fontSize: 15,
-    color: '#2E7D32',
-    fontWeight: 'bold',
-  },
-  timelineItemInactive: {
-    fontSize: 15,
-    color: '#999',
-    fontWeight: '600',
-  },
-  demoNextBtn: {
-    backgroundColor: '#FFEB3B',
-    padding: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: '#FBC02D',
-    marginBottom: 15,
-    alignItems: 'center',
-  },
-  demoNextBtnText: {
-    color: '#5D4037',
-    fontSize: 13,
-    fontWeight: '900',
-  },
-  trackingButtons: {
-    flexDirection: 'row',
-    gap: 10,
-  },
-  contactBtn: {
-    flex: 1,
-    backgroundColor: '#2E7D32',
-    height: 52,
-    borderRadius: 12,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: 8,
-  },
-  contactBtnText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  otpCard: {
-    backgroundColor: '#FFF9C4',
-    borderRadius: 16,
-    padding: 20,
-    alignItems: 'center',
-    marginBottom: 25,
-    borderWidth: 2.5,
-    borderColor: '#FBC02D',
-  },
-  otpLabel: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#5D4037',
-  },
-  otpDigitsContainer: {
-    flexDirection: 'row',
-    gap: 12,
-    marginVertical: 15,
-  },
-  otpDigit: {
-    backgroundColor: '#FFFFFF',
-    width: 44,
-    height: 52,
-    borderRadius: 8,
-    borderWidth: 2,
-    borderColor: '#FBC02D',
-    textAlign: 'center',
-    lineHeight: 48,
-    fontSize: 26,
-    fontWeight: '900',
-    color: '#212121',
-  },
-  otpVerifiedText: {
-    color: '#2E7D32',
-    fontSize: 14,
-    fontWeight: 'bold',
-  },
-  progressAnimationBox: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 16,
-    padding: 25,
-    alignItems: 'center',
-    marginBottom: 25,
-    gap: 10,
-  },
-  progressStartedText: {
-    fontSize: 15,
-    color: '#666',
-    fontWeight: 'bold',
-  },
-  checkoutText: {
-    fontSize: 15,
-    color: '#666',
     fontWeight: '700',
-    textAlign: 'center',
-    marginBottom: 20,
+    color: '#1F2937',
   },
-  ratingBox: {
-    backgroundColor: '#F5F5F5',
-    borderRadius: 16,
-    padding: 15,
-    alignItems: 'center',
-    marginBottom: 25,
-  },
-  ratingTitle: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    color: '#424242',
-    marginBottom: 10,
-  },
-  starsContainer: {
+  roleHeaderRight: {
     flexDirection: 'row',
-    gap: 8,
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    padding: 2,
   },
-  ratingStar: {
-    fontSize: 36,
+  roleSelectBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 6,
   },
-  starOn: {
-    color: '#FFB300',
+  roleSelectActiveFamily: {
+    backgroundColor: '#2563EB',
   },
-  starOff: {
-    color: '#E0E0E0',
+  roleSelectActiveVolunteer: {
+    backgroundColor: '#7C3AED',
   },
-  sosStickyBtn: {
-    position: 'absolute',
-    bottom: 12,
-    alignSelf: 'center',
-    backgroundColor: '#D32F2F',
-    width: width - 40,
-    height: 56,
-    borderRadius: 16,
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderWidth: 2,
-    borderColor: '#B71C1C',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.3,
-        shadowRadius: 5,
-      },
-      android: {
-        elevation: 6,
-      },
-    }),
+  roleSelectText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#4B5563',
   },
-  sosStickyBtnText: {
+  roleSelectActiveText: {
     color: '#FFFFFF',
-    fontSize: 19,
-    fontWeight: '900',
   },
-  sosModalOverlay: {
-    position: 'absolute',
-    top: 0,
-    bottom: 0,
-    left: 0,
-    right: 0,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
+  viewWrapper: {
+    flex: 1,
+  },
+  simulationBanner: {
+    backgroundColor: '#1E293B',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
     alignItems: 'center',
-    padding: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: '#334155',
   },
-  sosModalContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 24,
-    padding: 24,
-    width: '100%',
-    maxWidth: 450,
-    borderWidth: 4,
-    borderColor: '#D32F2F',
+  simulationBannerVolunteer: {
+    backgroundColor: '#1E1B4B',
+    paddingVertical: 10,
+    paddingHorizontal: 15,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottomWidth: 1,
+    borderBottomColor: '#312E81',
+  },
+  simulationText: {
+    color: '#F8FAFC',
+    fontWeight: '700',
+    fontSize: 12,
+  },
+  simulationButton: {
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 6,
+  },
+  btnEmergency: {
+    backgroundColor: '#EF4444',
+  },
+  btnNormal: {
+    backgroundColor: '#10B981',
+  },
+  simulationButtonText: {
+    color: '#FFF',
+    fontSize: 11,
+    fontWeight: '600',
+  },
+  scrollContainer: {
+    padding: 16,
+    paddingBottom: 40,
+  },
+  headerContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  brandTitle: {
+    fontSize: 14,
+    color: '#4B5563',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
+  },
+  seniorNames: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#111827',
+    marginVertical: 4,
+  },
+  locationContainer: {
+    flexDirection: 'row',
     alignItems: 'center',
   },
-  sosConfirmedBg: {
-    borderColor: '#2E7D32',
+  miniIcon: {
+    marginRight: 4,
   },
-  sosEmojiLarge: {
-    fontSize: 54,
-    marginBottom: 10,
+  locationText: {
+    fontSize: 14,
+    color: '#6B7280',
+    fontWeight: '500',
   },
-  sosModalTitle: {
-    fontSize: 26,
-    fontWeight: '900',
-    color: '#C62828',
-    marginBottom: 10,
-    textAlign: 'center',
-  },
-  sosModalPrompt: {
-    fontSize: 18,
-    color: '#424242',
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginBottom: 25,
-    lineHeight: 24,
-  },
-  sosConfirmBtn: {
-    backgroundColor: '#D32F2F',
-    width: '100%',
-    height: 56,
-    borderRadius: 14,
+  statusBadge: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 20,
+  },
+  badgeSafe: {
+    backgroundColor: '#ECFDF5',
+  },
+  badgeAlert: {
+    backgroundColor: '#FEF2F2',
+  },
+  statusDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    marginRight: 6,
+  },
+  dotSafe: {
+    backgroundColor: '#10B981',
+  },
+  dotAlert: {
+    backgroundColor: '#EF4444',
+  },
+  statusBadgeText: {
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  textSafe: {
+    color: '#065F46',
+  },
+  textAlert: {
+    color: '#991B1B',
+  },
+  philosophyContainer: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  philosophyHeader: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#374151',
+    textTransform: 'uppercase',
+    letterSpacing: 0.5,
     marginBottom: 12,
   },
-  sosConfirmBtnText: {
-    color: '#FFFFFF',
-    fontSize: 18,
-    fontWeight: '900',
-  },
-  sosCancelBtn: {
-    backgroundColor: '#EEEEEE',
-    width: '100%',
-    height: 52,
-    borderRadius: 14,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sosCancelBtnText: {
-    color: '#424242',
-    fontSize: 16,
-    fontWeight: 'bold',
-  },
-  sosSentTitle: {
-    fontSize: 24,
-    fontWeight: '900',
-    color: '#2E7D32',
-    marginBottom: 15,
-    textAlign: 'center',
-  },
-  sosBulletList: {
-    width: '100%',
+  philosophyGrid: {
     gap: 12,
-    marginBottom: 25,
   },
-  sosBulletItem: {
+  philosophyItem: {
+    borderLeftWidth: 3,
+    borderLeftColor: '#D1D5DB',
+    paddingLeft: 10,
+  },
+  philosophyLabel: {
+    fontSize: 11,
+    color: '#6B7280',
+    fontWeight: '500',
+    textTransform: 'uppercase',
+  },
+  philosophyValue: {
     fontSize: 15,
-    color: '#2E7D32',
-    fontWeight: 'bold',
-    lineHeight: 20,
+    fontWeight: '600',
+    color: '#1F2937',
+    marginTop: 2,
   },
-  sosCloseBtn: {
-    backgroundColor: '#2E7D32',
-    width: '100%',
-    height: 52,
-    borderRadius: 14,
+  philosophySuccess: {
+    color: '#059669',
+  },
+  philosophyDanger: {
+    color: '#DC2626',
+    fontWeight: '700',
+  },
+  emergencyCard: {
+    backgroundColor: '#DC2626',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#DC2626',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 6,
+    elevation: 4,
+  },
+  emergencyHeader: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
+    gap: 8,
+    marginBottom: 12,
   },
-  sosCloseBtnText: {
-    color: '#FFFFFF',
+  emergencyHeaderTitle: {
+    color: '#FFF',
     fontSize: 18,
-    fontWeight: 'bold',
+    fontWeight: '800',
+    letterSpacing: 0.5,
   },
-});
-
-const originalStyles = StyleSheet.create({
-  titleContainer: {
+  emergencyBody: {
+    gap: 12,
+  },
+  emergencyAlertText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '600',
+    lineHeight: 22,
+  },
+  emergencyHighlightBox: {
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    borderRadius: 8,
+    padding: 12,
+  },
+  emergencySubTitle: {
+    color: 'rgba(255, 255, 255, 0.8)',
+    fontSize: 11,
+    fontWeight: '700',
+    textTransform: 'uppercase',
+  },
+  emergencyContactName: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
+    marginVertical: 2,
+  },
+  emergencyContactRole: {
+    color: 'rgba(255, 255, 255, 0.9)',
+    fontSize: 13,
+  },
+  escalationRow: {
+    gap: 6,
+  },
+  checklistRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  checklistText: {
+    color: '#FFF',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  emergencyButton: {
+    backgroundColor: '#FFF',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+    marginTop: 4,
+  },
+  emergencyButtonText: {
+    color: '#DC2626',
+    fontWeight: '700',
+    fontSize: 13,
+  },
+  sectionCard: {
+    backgroundColor: '#FFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 14,
+    borderBottomWidth: 1,
+    borderBottomColor: '#F3F4F6',
+    paddingBottom: 10,
+  },
+  headerLeftRow: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
-  stepContainer: {
+  sectionTitle: {
+    fontSize: 14,
+    fontWeight: '700',
+    color: '#374151',
+    letterSpacing: 0.5,
+  },
+  handledBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#ECFDF5',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 12,
+    gap: 4,
+  },
+  bulletGreen: {
+    width: 6,
+    height: 6,
+    borderRadius: 3,
+    backgroundColor: '#10B981',
+  },
+  handledText: {
+    fontSize: 11,
+    color: '#065F46',
+    fontWeight: '600',
+  },
+  attentionBody: {
     gap: 8,
+  },
+  attentionAlertTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  attentionText: {
+    fontSize: 14,
+    color: '#4B5563',
+    lineHeight: 20,
+  },
+  helperAssignedRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F0FDF4',
+    padding: 8,
+    borderRadius: 8,
+    marginTop: 4,
+  },
+  helperAssignedText: {
+    fontSize: 13,
+    color: '#166534',
+    fontWeight: '600',
+  },
+  activityList: {
+    gap: 12,
+  },
+  activityRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    paddingVertical: 4,
+  },
+  activityLabelCol: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+  },
+  activityEmoji: {
+    fontSize: 20,
+  },
+  activityName: {
+    fontSize: 15,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  activityStatusCompleted: {
+    backgroundColor: '#ECFDF5',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+  },
+  completedText: {
+    fontSize: 12,
+    color: '#065F46',
+    fontWeight: '600',
+  },
+  activityStatusUpcoming: {
+    backgroundColor: '#FFFBEB',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+  },
+  upcomingText: {
+    fontSize: 12,
+    color: '#92400E',
+    fontWeight: '600',
+  },
+  networkBrief: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginBottom: 12,
+    gap: 8,
+  },
+  briefItem: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 8,
+    padding: 10,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+  },
+  briefRoleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  briefEmoji: {
+    fontSize: 16,
+  },
+  briefLabel: {
+    fontSize: 12,
+    color: '#374151',
+    fontWeight: '600',
+  },
+  statusIndicatorCircle: {
+    width: 10,
+    height: 10,
+    borderRadius: 5,
+  },
+  circleSafe: {
+    backgroundColor: '#10B981',
+  },
+  circleDanger: {
+    backgroundColor: '#EF4444',
+  },
+  viewNetworkBtn: {
+    backgroundColor: '#F3F4F6',
+    borderRadius: 8,
+    paddingVertical: 10,
+    alignItems: 'center',
+  },
+  viewNetworkBtnText: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#374151',
+  },
+  recentTasksList: {
+    gap: 8,
+  },
+  recentTaskItem: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    backgroundColor: '#F9FAFB',
+    padding: 10,
+    borderRadius: 8,
+  },
+  recentTaskText: {
+    fontSize: 14,
+    color: '#4B5563',
+    fontWeight: '500',
+  },
+  recentTaskTick: {
+    fontSize: 14,
+    color: '#10B981',
+    fontWeight: '700',
+  },
+  footerReassurance: {
+    alignItems: 'center',
+    marginVertical: 16,
+    paddingHorizontal: 16,
+  },
+  reassuranceText: {
+    fontSize: 12,
+    color: '#9CA3AF',
+    fontStyle: 'italic',
+    textAlign: 'center',
+    lineHeight: 18,
+  },
+
+  /* Volunteer Screen Styles */
+  volunteerGreetingBox: {
+    marginBottom: 16,
+  },
+  volunteerGreetingText: {
+    fontSize: 24,
+    fontWeight: '700',
+    color: '#1E1B4B',
+  },
+  volunteerSubtitleText: {
+    fontSize: 14,
+    color: '#4B5563',
+    marginTop: 4,
+  },
+  volunteerTrustCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    marginBottom: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  trustHeaderRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  trustProfileName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+  },
+  trustProfileTitle: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  trustScoreBadge: {
+    alignItems: 'center',
+    backgroundColor: '#F5F3FF',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+  },
+  trustScoreLabel: {
+    fontSize: 9,
+    color: '#7C3AED',
+    textTransform: 'uppercase',
+    fontWeight: '700',
+  },
+  trustScoreValue: {
+    fontSize: 18,
+    fontWeight: '800',
+    color: '#7C3AED',
+  },
+  trustDividers: {
+    height: 1,
+    backgroundColor: '#F3F4F6',
+    marginVertical: 12,
+  },
+  trustDetailsGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 12,
+  },
+  trustBullet: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#F9FAFB',
+    paddingVertical: 6,
+    paddingHorizontal: 10,
+    borderRadius: 8,
+  },
+  trustBulletText: {
+    fontSize: 12,
+    color: '#374151',
+    fontWeight: '500',
+  },
+  demoEngineControls: {
+    backgroundColor: '#FFFBEB',
+    borderWidth: 1,
+    borderColor: '#FDE68A',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  demoEngineHeader: {
+    fontSize: 11,
+    fontWeight: '700',
+    color: '#92400E',
+    letterSpacing: 0.5,
+  },
+  demoEngineText: {
+    fontSize: 12,
+    color: '#78350F',
+    marginVertical: 4,
+    lineHeight: 16,
+  },
+  demoEngineButtonsContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: 6,
+    marginTop: 6,
+  },
+  demoEngineBtn: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 6,
+    paddingVertical: 5,
+    paddingHorizontal: 8,
+  },
+  demoEngineBtnActive: {
+    backgroundColor: '#F59E0B',
+    borderColor: '#D97706',
+  },
+  demoEngineBtnText: {
+    fontSize: 11,
+    fontWeight: '600',
+    color: '#374151',
+  },
+  idleStateCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 32,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+  },
+  idleStateTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#374151',
+    marginTop: 12,
+  },
+  idleStateText: {
+    fontSize: 13,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 6,
+    lineHeight: 18,
+  },
+  requestCard: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 16,
+    padding: 16,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.05,
+    shadowRadius: 2,
+    elevation: 2,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E5E7EB',
+  },
+  backupHeaderBadge: {
+    backgroundColor: '#EA580C',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+  },
+  backupHeaderText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  requestCardHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+  },
+  requestMainText: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  avatarEmojiLarge: {
+    fontSize: 32,
+  },
+  requestSeniorTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  requestSeniorSubtitle: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 2,
+  },
+  priorityBadge: {
+    backgroundColor: '#ECFDF5',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+  },
+  priorityText: {
+    fontSize: 11,
+    color: '#065F46',
+    fontWeight: '600',
+  },
+  requestMetricsGrid: {
+    flexDirection: 'row',
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 10,
+    marginVertical: 14,
+    gap: 8,
+  },
+  requestMetricCell: {
+    flex: 1,
+    alignItems: 'center',
+  },
+  reqMetricLabel: {
+    fontSize: 9,
+    color: '#9CA3AF',
+    textTransform: 'uppercase',
+    fontWeight: '600',
+  },
+  reqMetricValue: {
+    fontSize: 13,
+    fontWeight: '700',
+    color: '#374151',
+    marginTop: 2,
+  },
+  matchedSection: {
+    backgroundColor: '#F5F3FF',
+    borderRadius: 12,
+    padding: 12,
+    marginBottom: 16,
+  },
+  matchedTitle: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#5B21B6',
+    marginBottom: 6,
+  },
+  matchedChecklist: {
+    gap: 4,
+  },
+  matchedCheckitem: {
+    fontSize: 11,
+    color: '#6D28D9',
+    fontWeight: '500',
+  },
+  requestActionsRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  requestAcceptBtn: {
+    flex: 2,
+    backgroundColor: '#7C3AED',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  requestAcceptBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  requestRejectBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  requestRejectBtnText: {
+    color: '#4B5563',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  activeHeaderIndicator: {
+    backgroundColor: '#10B981',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+  },
+  activeIndicatorText: {
+    color: '#FFFFFF',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  acceptedCongrats: {
+    fontSize: 15,
+    fontWeight: '600',
+    color: '#374151',
+    marginBottom: 12,
+  },
+  routeDetailsBox: {
+    backgroundColor: '#F9FAFB',
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: '#F3F4F6',
+    marginBottom: 14,
+  },
+  routeLabel: {
+    fontSize: 11,
+    color: '#9CA3AF',
+    textTransform: 'uppercase',
+    fontWeight: '600',
+  },
+  routeValue: {
+    fontSize: 15,
+    fontWeight: '700',
+    color: '#1F2937',
+    marginTop: 2,
+  },
+  routeSubText: {
+    fontSize: 13,
+    color: '#4B5563',
+    marginTop: 6,
+    lineHeight: 18,
+    fontStyle: 'italic',
+  },
+  navigationButton: {
+    backgroundColor: '#7C3AED',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 8,
+    paddingVertical: 12,
+    borderRadius: 8,
     marginBottom: 8,
   },
-  reactLogo: {
-    height: 178,
-    width: 290,
-    bottom: 0,
-    left: 0,
-    position: 'absolute',
+  navigationBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  arrivedButton: {
+    backgroundColor: '#FFFFFF',
+    borderWidth: 1,
+    borderColor: '#7C3AED',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  arrivedBtnText: {
+    color: '#7C3AED',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  otpHeaderTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#1F2937',
+    textAlign: 'center',
+  },
+  otpHeaderSub: {
+    fontSize: 13,
+    color: '#4B5563',
+    textAlign: 'center',
+    marginVertical: 8,
+    lineHeight: 18,
+  },
+  otpInputContainer: {
+    flexDirection: 'row',
+    gap: 10,
+    marginTop: 14,
+    marginBottom: 10,
+  },
+  otpInput: {
+    flex: 1,
+    backgroundColor: '#F3F4F6',
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    borderRadius: 8,
+    paddingHorizontal: 12,
+    fontSize: 16,
+    color: '#1F2937',
+    fontWeight: '600',
+  },
+  otpVerifyBtn: {
+    backgroundColor: '#7C3AED',
+    paddingHorizontal: 20,
+    justifyContent: 'center',
+    borderRadius: 8,
+  },
+  otpVerifyBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  otpHelpHint: {
+    fontSize: 12,
+    color: '#92400E',
+    backgroundColor: '#FFFBEB',
+    padding: 8,
+    borderRadius: 6,
+    textAlign: 'center',
+  },
+  progressBadgeRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    backgroundColor: '#FEF3C7',
+    paddingVertical: 4,
+    paddingHorizontal: 8,
+    borderRadius: 8,
+    alignSelf: 'flex-start',
+    marginBottom: 12,
+  },
+  pulseDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: '#D97706',
+  },
+  progressText: {
+    color: '#92400E',
+    fontSize: 11,
+    fontWeight: '700',
+  },
+  progressMainDetails: {
+    marginBottom: 16,
+  },
+  progressTaskName: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+  },
+  progressTimeStarted: {
+    fontSize: 13,
+    color: '#6B7280',
+    marginTop: 4,
+  },
+  completeTaskBtn: {
+    backgroundColor: '#10B981',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  completeTaskBtnText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  completedConfirmTitle: {
+    fontSize: 16,
+    fontWeight: '700',
+    color: '#1F2937',
+    textAlign: 'center',
+  },
+  completedConfirmSub: {
+    fontSize: 13,
+    color: '#6B7280',
+    textAlign: 'center',
+    marginTop: 6,
+    marginBottom: 16,
+    lineHeight: 18,
+  },
+  confirmBtnRow: {
+    flexDirection: 'row',
+    gap: 10,
+  },
+  confirmYesBtn: {
+    flex: 1,
+    backgroundColor: '#10B981',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  confirmYesText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
+  },
+  confirmNoBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderColor: '#D1D5DB',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  confirmNoText: {
+    color: '#4B5563',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+  checkoutSuccessIconContainer: {
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  checkoutTitle: {
+    fontSize: 18,
+    fontWeight: '700',
+    color: '#111827',
+    textAlign: 'center',
+  },
+  checkoutSub: {
+    fontSize: 13,
+    color: '#4B5563',
+    textAlign: 'center',
+    marginTop: 6,
+    lineHeight: 18,
+  },
+  familyAlertReassuranceBox: {
+    backgroundColor: '#ECFDF5',
+    borderRadius: 12,
+    padding: 12,
+    marginVertical: 16,
+  },
+  familyAlertReassuranceText: {
+    fontSize: 12,
+    color: '#065F46',
+    fontWeight: '600',
+    lineHeight: 18,
+    textAlign: 'center',
+  },
+  checkoutHomeBtn: {
+    backgroundColor: '#7C3AED',
+    paddingVertical: 12,
+    borderRadius: 8,
+    alignItems: 'center',
+  },
+  checkoutHomeText: {
+    color: '#FFFFFF',
+    fontWeight: '700',
+    fontSize: 14,
   },
 });
 
