@@ -1,11 +1,25 @@
 import React, { useEffect, useState } from 'react';
 import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, Alert, Dimensions, ActivityIndicator } from 'react-native';
+import { Image } from 'expo-image';
+import { Link } from 'expo-router';
+
+// Imports from the original starter home screen
+import { HelloWave } from '../../components/hello-wave';
+import ParallaxScrollView from '../../components/parallax-scroll-view';
+import { ThemedText } from '../../components/themed-text';
+import { ThemedView } from '../../components/themed-view';
+
+// Imports from our high-fidelity elder UI
 import { IconSymbol } from '../../components/ui/icon-symbol';
 import { globalStore } from '../../constants/store';
 
 const { width } = Dimensions.get('window');
 
 export default function HomeScreen() {
+  // Mode switcher: default to 'elder' to showcase senior accessibility target,
+  // but allow toggling to 'developer' to render 100% of the original starter screen from main.
+  const [appMode, setAppMode] = useState<'elder' | 'developer'>('elder');
+
   const [lang, setLang] = useState(globalStore.getLanguage());
   const [demoState, setDemoState] = useState(globalStore.getDemoState());
   const [inputText, setInputText] = useState(globalStore.getDemoInputText());
@@ -332,455 +346,555 @@ export default function HomeScreen() {
   };
 
   return (
-    <View style={styles.outerContainer}>
-      {/* Dev Simulation Scenario Controller Banner */}
-      <View style={styles.devPanel}>
-        <Text style={styles.devPanelText}>🛠️ [DEMO CONTROLLER] Choose Scenario Flow:</Text>
-        <View style={styles.devBtnRow}>
+    <View style={mergedStyles.outerContainer}>
+      {/* 💻 Mode Switcher Header Panel: Allows toggling between Elder Mode and Developer Mode */}
+      <View style={mergedStyles.modeSwitcherPanel}>
+        <Text style={mergedStyles.modeSwitcherText}>⚙️ Select Screen Mode (पसंदीदा स्क्रीन):</Text>
+        <View style={mergedStyles.modeBtnRow}>
           <TouchableOpacity
-            style={[styles.devBtn, scenario === 'backup' && styles.devBtnActive]}
-            onPress={() => globalStore.setScenario('backup')}
+            style={[mergedStyles.modeBtn, appMode === 'elder' && mergedStyles.modeBtnActive]}
+            onPress={() => setAppMode('elder')}
           >
-            <Text style={[styles.devBtnText, scenario === 'backup' && styles.devBtnTextActive]}>
-              Concept: Ghar Ka Backup
+            <Text style={[mergedStyles.modeBtnText, appMode === 'elder' && mergedStyles.modeBtnTextActive]}>
+              👵 Elder / Senior UI
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
-            style={[styles.devBtn, scenario === 'regular' && styles.devBtnActive]}
-            onPress={() => globalStore.setScenario('regular')}
+            style={[mergedStyles.modeBtn, appMode === 'developer' && mergedStyles.modeBtnActive]}
+            onPress={() => setAppMode('developer')}
           >
-            <Text style={[styles.devBtnText, scenario === 'regular' && styles.devBtnTextActive]}>
-              Direct Match
+            <Text style={[mergedStyles.modeBtnText, appMode === 'developer' && mergedStyles.modeBtnTextActive]}>
+              💻 Developer / Starter UI
             </Text>
           </TouchableOpacity>
         </View>
       </View>
 
-      <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-        {/* State 0: IDLE */}
-        {demoState === 'idle' && (
-          <View style={styles.idleView}>
-            {/* Header */}
-            <View style={styles.header}>
-              <Text style={styles.namasteText}>{t.namaste}</Text>
-              <Text style={styles.taglineText}>{t.tagline}</Text>
-            </View>
+      {/* RENDER VIEW ACCORDING TO SELECTED MODE */}
+      {appMode === 'developer' ? (
+        /* RENDER ORIGINAL DEVELOPER STARTER HOME SCREEN FROM MAIN (100% PRESERVED) */
+        <ParallaxScrollView
+          headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
+          headerImage={
+            <Image
+              source={require('../../assets/images/partial-react-logo.png')}
+              style={mergedStyles.reactLogo}
+            />
+          }>
+          <ThemedView style={mergedStyles.titleContainer}>
+            <ThemedText type="title">Ri</ThemedText>
+            <HelloWave />
+          </ThemedView>
+          <ThemedView style={mergedStyles.stepContainer}>
+            <ThemedText type="subtitle">Step 1: Try it</ThemedText>
+            <ThemedText>
+              Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
+              Press{' '}
+              <ThemedText type="defaultSemiBold">
+                {Platform.select({
+                  ios: 'cmd + d',
+                  android: 'cmd + m',
+                  web: 'F12',
+                })}
+              </ThemedText>{' '}
+              to open developer tools.
+            </ThemedText>
+          </ThemedView>
+          <ThemedView style={mergedStyles.stepContainer}>
+            <Link href="/modal">
+              <Link.Trigger>
+                <ThemedText type="subtitle">Step 2: Explore</ThemedText>
+              </Link.Trigger>
+              <Link.Preview />
+              <Link.Menu>
+                <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
+                <Link.MenuAction
+                  title="Share"
+                  icon="square.and.arrow.up"
+                  onPress={() => alert('Share pressed')}
+                />
+                <Link.Menu title="More" icon="ellipsis">
+                  <Link.MenuAction
+                    title="Delete"
+                    icon="trash"
+                    destructive
+                    onPress={() => alert('Delete pressed')}
+                  />
+                </Link.Menu>
+              </Link.Menu>
+            </Link>
 
-            {/* Massive Microphone Button */}
-            <TouchableOpacity
-              style={styles.voiceButtonContainer}
-              onPress={startListening}
-              activeOpacity={0.85}
-            >
-              <View style={styles.voiceOuterCircle}>
-                <View style={styles.voiceInnerCircle}>
-                  <Text style={styles.voiceEmoji}>🎙️</Text>
-                  <Text style={styles.voiceButtonText}>{t.micBtn}</Text>
+            <ThemedText>
+              {`Tap the Explore tab to learn more about what's included in this starter app.`}
+            </ThemedText>
+          </ThemedView>
+          <ThemedView style={mergedStyles.stepContainer}>
+            <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
+            <ThemedText>
+              {`When you're ready, run `}
+              <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
+              <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
+              <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
+              <ThemedText type="defaultSemiBold">app-example</ThemedText>.
+            </ThemedText>
+          </ThemedView>
+        </ParallaxScrollView>
+      ) : (
+        /* RENDER ACCESSIBLE SENIOR CITIZEN VOICE FLOW */
+        <View style={mergedStyles.elderRoot}>
+          {/* Dev Simulation Scenario Controller Banner */}
+          <View style={mergedStyles.devPanel}>
+            <Text style={mergedStyles.devPanelText}>🛠️ [DEMO CONTROLLER] Choose Scenario Flow:</Text>
+            <View style={mergedStyles.devBtnRow}>
+              <TouchableOpacity
+                style={[mergedStyles.devBtn, scenario === 'backup' && mergedStyles.devBtnActive]}
+                onPress={() => globalStore.setScenario('backup')}
+              >
+                <Text style={[mergedStyles.devBtnText, scenario === 'backup' && mergedStyles.devBtnTextActive]}>
+                  Concept: Ghar Ka Backup
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[mergedStyles.devBtn, scenario === 'regular' && mergedStyles.devBtnActive]}
+                onPress={() => globalStore.setScenario('regular')}
+              >
+                <Text style={[mergedStyles.devBtnText, scenario === 'regular' && mergedStyles.devBtnTextActive]}>
+                  Direct Match
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <ScrollView style={mergedStyles.container} contentContainerStyle={mergedStyles.contentContainer}>
+            {/* State 0: IDLE */}
+            {demoState === 'idle' && (
+              <View style={mergedStyles.idleView}>
+                {/* Header */}
+                <View style={mergedStyles.header}>
+                  <Text style={mergedStyles.namasteText}>{t.namaste}</Text>
+                  <Text style={mergedStyles.taglineText}>{t.tagline}</Text>
                 </View>
-              </View>
-              <Text style={styles.voiceButtonSubtext}>{t.micSub}</Text>
-            </TouchableOpacity>
 
-            {/* Simulated preset quick helpers for elderly click */}
-            <View style={styles.presetsCard}>
-              <Text style={styles.categoryTitle}>{t.categories}</Text>
+                {/* Massive Microphone Button */}
+                <TouchableOpacity
+                  style={mergedStyles.voiceButtonContainer}
+                  onPress={startListening}
+                  activeOpacity={0.85}
+                >
+                  <View style={mergedStyles.voiceOuterCircle}>
+                    <View style={mergedStyles.voiceInnerCircle}>
+                      <Text style={mergedStyles.voiceEmoji}>🎙️</Text>
+                      <Text style={mergedStyles.voiceButtonText}>{t.micBtn}</Text>
+                    </View>
+                  </View>
+                  <Text style={mergedStyles.voiceButtonSubtext}>{t.micSub}</Text>
+                </TouchableOpacity>
 
-              <TouchableOpacity
-                style={styles.presetRow}
-                onPress={() => handlePresetSelect(lang === 'hi' ? 'मुझे प्लंबर चाहिए' : 'I need a plumber', 'household')}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.presetText}>{t.catHousehold}</Text>
-                <IconSymbol size={24} name="chevron.right" color="#2E7D32" />
-              </TouchableOpacity>
+                {/* Simulated preset quick helpers for elderly click */}
+                <View style={mergedStyles.presetsCard}>
+                  <Text style={mergedStyles.categoryTitle}>{t.categories}</Text>
 
-              <TouchableOpacity
-                style={styles.presetRow}
-                onPress={() => handlePresetSelect(lang === 'hi' ? 'मुझे दवाई ला दो' : 'Get me medicine', 'medicine')}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.presetText}>{t.catMedicine}</Text>
-                <IconSymbol size={24} name="chevron.right" color="#2E7D32" />
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={styles.presetRow}
-                onPress={() => handlePresetSelect(lang === 'hi' ? 'कल डॉक्टर के पास जाना है' : 'I have to visit doctor tomorrow', 'doctor')}
-                activeOpacity={0.7}
-              >
-                <Text style={styles.presetText}>{t.catDoctor}</Text>
-                <IconSymbol size={24} name="chevron.right" color="#2E7D32" />
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {/* State 1: LISTENING */}
-        {demoState === 'listening' && (
-          <View style={styles.stateCard}>
-            <Text style={styles.stateTitle}>{t.listening}</Text>
-            <Text style={styles.stateDesc}>{t.speakNow}</Text>
-
-            {/* Waveform Simulation Block */}
-            <View style={styles.waveformContainer}>
-              {waveHeights.map((h, idx) => (
-                <View key={idx} style={[styles.waveBar, { height: h }]} />
-              ))}
-            </View>
-
-            {/* Click to simulate preset voice commands for presentation */}
-            <View style={styles.simInputsBox}>
-              <Text style={styles.simInputsTitle}>[Simulate Speech / बोलकर कहें]:</Text>
-              <TouchableOpacity
-                style={styles.simInputBtn}
-                onPress={() => handlePresetSelect(lang === 'hi' ? 'मुझे प्लंबर चाहिए' : 'I need a plumber', 'household')}
-              >
-                <Text style={styles.simInputBtnText}>{t.speakPrompt1}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.simInputBtn}
-                onPress={() => handlePresetSelect(lang === 'hi' ? 'कल डॉक्टर के पास जाना है' : 'I want to visit doctor tomorrow', 'doctor')}
-              >
-                <Text style={styles.simInputBtnText}>{t.speakPrompt2}</Text>
-              </TouchableOpacity>
-            </View>
-
-            <TouchableOpacity
-              style={styles.stopButton}
-              onPress={stopListeningSimulate}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.stopButtonText}>{t.stopBtn}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* State 2: VOICE TO TEXT CONFIRMATION */}
-        {demoState === 'confirm' && (
-          <View style={styles.stateCard}>
-            <Text style={styles.stateTitle}>{t.suna}</Text>
-
-            <View style={styles.transcriptionBox}>
-              <Text style={styles.transcriptionText}>"{inputText}"</Text>
-            </View>
-
-            <Text style={styles.stateSubtitle}>{t.sahiHai}</Text>
-
-            <View style={styles.confirmButtonsRow}>
-              <TouchableOpacity
-                style={[styles.confirmBtn, styles.btnBadlein]}
-                onPress={() => globalStore.setDemoState('listening')}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.btnBadleinText}>{t.btnBadlein}</Text>
-              </TouchableOpacity>
-
-              <TouchableOpacity
-                style={[styles.confirmBtn, styles.btnHaan]}
-                onPress={handleConfirmHaan}
-                activeOpacity={0.8}
-              >
-                <Text style={styles.btnHaanText}>{t.btnHaan}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {/* State 3: AI INTENT DETECTION BOX */}
-        {demoState === 'intent' && (
-          <View style={styles.stateCard}>
-            <Text style={styles.stateTitle}>{t.intentTitle}</Text>
-
-            <View style={styles.intentBox}>
-              <View style={styles.intentRow}>
-                <Text style={styles.intentLabel}>{t.intentCategory}:</Text>
-                <Text style={styles.intentValue}>HOUSEHOLD REPAIR</Text>
-              </View>
-              <View style={styles.intentRow}>
-                <Text style={styles.intentLabel}>{t.intentSkill}:</Text>
-                <Text style={styles.intentValue}>PLUMBING</Text>
-              </View>
-              <View style={styles.intentRow}>
-                <Text style={styles.intentLabel}>{t.intentPriority}:</Text>
-                <Text style={[styles.intentValue, { color: '#E65100' }]}>NORMAL</Text>
-              </View>
-              <View style={styles.intentRow}>
-                <Text style={styles.intentLabel}>{t.intentLocation}:</Text>
-                <Text style={styles.intentValue}>{t.intentHome}</Text>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={handleConfirmIntent}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.actionButtonText}>{t.btnConfirmIntent}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* State 4: CONFIRM DISPATCH */}
-        {demoState === 'dispatch' && (
-          <View style={styles.stateCard}>
-            <Text style={styles.stateTitle}>{t.confirmTitle}</Text>
-            <Text style={styles.stateDesc}>{t.confirmSubtitle}</Text>
-
-            <View style={styles.confirmSummaryBox}>
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryEmoji}>🔧</Text>
-                <Text style={styles.summaryText}>{inputText}</Text>
-              </View>
-              <View style={styles.summaryItem}>
-                <Text style={styles.summaryEmoji}>📍</Text>
-                <Text style={styles.summaryText}>{t.intentHome}</Text>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={handleSendRequest}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.actionButtonText}>{t.btnSendRequest}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={styles.cancelBtnTextOnly}
-              onPress={() => globalStore.setDemoState('idle')}
-              activeOpacity={0.7}
-            >
-              <Text style={styles.cancelTextOnly}>{t.btnCancel}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* State 5: MATCHING ENGINE IN SEARCH */}
-        {demoState === 'matching' && (
-          <View style={styles.stateCard}>
-            <Text style={styles.stateTitle}>{t.finding}</Text>
-            <ActivityIndicator size="large" color="#2E7D32" style={styles.loader} />
-            <Text style={styles.stateSubtitle}>{t.checkingNetwork}</Text>
-
-            <View style={styles.matchingChecks}>
-              <Text style={styles.checkItem}>{t.nearby}</Text>
-              <Text style={styles.checkItem}>{t.trusted}</Text>
-              <Text style={styles.checkItem}>{t.availability}</Text>
-            </View>
-
-            <Text style={styles.pleaseWaitText}>{t.pleaseWait}</Text>
-          </View>
-        )}
-
-        {/* State 6: BACKUP WARNING / ACTIVATION (USP) */}
-        {demoState === 'backup_warning' && (
-          <View style={[styles.stateCard, styles.backupCard]}>
-            <Text style={styles.backupTitleText}>{t.backupTitle}</Text>
-            <Text style={styles.backupDorryText}>{t.backupDonotWorry}</Text>
-            <Text style={styles.backupFoundText}>{t.backupFound}</Text>
-
-            <View style={styles.backupHelperBox}>
-              <View style={styles.avatarCircleSmall}>
-                <Text style={styles.avatarEmojiSmall}>🔧</Text>
-              </View>
-              <View style={styles.backupDetails}>
-                <Text style={styles.backupHelperName}>{t.backupRaj}</Text>
-                <Text style={styles.backupVerifiedText}>{t.backupVerified}</Text>
-                <Text style={styles.backupRating}>⭐ 4.7 (1.2 km away)</Text>
-              </View>
-            </View>
-
-            <TouchableOpacity
-              style={[styles.actionButton, styles.backupBtn]}
-              onPress={handleAcceptBackup}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.actionButtonText}>{t.backupRequestBtn}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* State 7: ACTIVE REQUEST TRACKING */}
-        {demoState === 'tracking' && (
-          <View style={styles.stateCard}>
-            <Text style={styles.stateTitle}>{t.trackingTitle}</Text>
-
-            <View style={styles.helperProfileCard}>
-              <Text style={styles.helperAvatarLarge}>👨</Text>
-              <Text style={styles.helperNameLarge}>{getHelperDetails().name}</Text>
-              <Text style={styles.helperType}>{getHelperDetails().type}</Text>
-              <Text style={styles.helperRatingBadge}>⭐ {getHelperDetails().rating}</Text>
-              <Text style={styles.helperEta}>{t.trackingEta}</Text>
-            </View>
-
-            <View style={styles.trackingTimeline}>
-              <Text style={styles.timelineItemActive}>{t.trackingStatusAccepted}</Text>
-              <Text style={styles.timelineItemActive}>{t.trackingStatusOnWay}</Text>
-              <Text style={styles.timelineItemInactive}>{t.trackingStatusArrived}</Text>
-              <Text style={styles.timelineItemInactive}>{t.trackingStatusCompleted}</Text>
-            </View>
-
-            {/* Quick action to move demo along */}
-            <TouchableOpacity
-              style={styles.demoNextBtn}
-              onPress={handleSimulateArrived}
-            >
-              <Text style={styles.demoNextBtnText}>[Simulate Helper Arrival / आ गया]</Text>
-            </TouchableOpacity>
-
-            <View style={styles.trackingButtons}>
-              <TouchableOpacity
-                style={styles.contactBtn}
-                onPress={() => Alert.alert(lang === 'hi' ? 'फ़ोन लगाया जा रहा है...' : 'Calling...', getHelperDetails().name)}
-                activeOpacity={0.8}
-              >
-                <IconSymbol size={24} name="phone.fill" color="#FFFFFF" />
-                <Text style={styles.contactBtnText}>{t.btnContactHelper}</Text>
-              </TouchableOpacity>
-            </View>
-          </View>
-        )}
-
-        {/* State 8: HELPER ARRIVED (OTP EXPOSURE) */}
-        {demoState === 'arrived' && (
-          <View style={styles.stateCard}>
-            <Text style={styles.stateTitle}>{t.arrivedTitle}</Text>
-            <Text style={styles.stateDesc}>{t.arrivedOtpPrompt}</Text>
-
-            <View style={styles.otpCard}>
-              <Text style={styles.otpLabel}>{t.taskOtp}</Text>
-              <View style={styles.otpDigitsContainer}>
-                <Text style={styles.otpDigit}>4</Text>
-                <Text style={styles.otpDigit}>8</Text>
-                <Text style={styles.otpDigit}>2</Text>
-                <Text style={styles.otpDigit}>1</Text>
-              </View>
-              <Text style={styles.otpVerifiedText}>{t.arrivedVerified}</Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={handleAuthorizeStart}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.actionButtonText}>{t.btnStartTask}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* State 9: TASK IN PROGRESS */}
-        {demoState === 'progress' && (
-          <View style={styles.stateCard}>
-            <Text style={styles.stateTitle}>{t.progressTitle}</Text>
-            <Text style={styles.stateDesc}>{t.progressDesc}</Text>
-
-            <View style={styles.progressAnimationBox}>
-              <ActivityIndicator size="large" color="#2E7D32" />
-              <Text style={styles.progressStartedText}>{t.progressStarted}</Text>
-            </View>
-
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={handleSimulateCompleted}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.actionButtonText}>{t.btnCompleteTask}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-
-        {/* State 10: TASK COMPLETED & STAR RATING */}
-        {demoState === 'completed' && (
-          <View style={styles.stateCard}>
-            <Text style={styles.stateTitle}>{t.doneTitle}</Text>
-            <Text style={styles.stateDesc}>{t.doneDesc}</Text>
-            <Text style={styles.checkoutText}>{t.doneCheckout}</Text>
-
-            <View style={styles.ratingBox}>
-              <Text style={styles.ratingTitle}>{t.doneRatingPrompt}</Text>
-
-              <View style={styles.starsContainer}>
-                {[1, 2, 3, 4, 5].map((star) => (
                   <TouchableOpacity
-                    key={star}
-                    onPress={() => globalStore.setActiveRating(star)}
+                    style={mergedStyles.presetRow}
+                    onPress={() => handlePresetSelect(lang === 'hi' ? 'मुझे प्लंबर चाहिए' : 'I need a plumber', 'household')}
                     activeOpacity={0.7}
                   >
-                    <Text style={[styles.ratingStar, star <= currentRating ? styles.starOn : styles.starOff]}>
-                      ★
-                    </Text>
+                    <Text style={mergedStyles.presetText}>{t.catHousehold}</Text>
+                    <IconSymbol size={24} name="chevron.right" color="#2E7D32" />
                   </TouchableOpacity>
-                ))}
+
+                  <TouchableOpacity
+                    style={mergedStyles.presetRow}
+                    onPress={() => handlePresetSelect(lang === 'hi' ? 'मुझे दवाई ला दो' : 'Get me medicine', 'medicine')}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={mergedStyles.presetText}>{t.catMedicine}</Text>
+                    <IconSymbol size={24} name="chevron.right" color="#2E7D32" />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={mergedStyles.presetRow}
+                    onPress={() => handlePresetSelect(lang === 'hi' ? 'कल डॉक्टर के पास जाना है' : 'I have to visit doctor tomorrow', 'doctor')}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={mergedStyles.presetText}>{t.catDoctor}</Text>
+                    <IconSymbol size={24} name="chevron.right" color="#2E7D32" />
+                  </TouchableOpacity>
+                </View>
               </View>
-            </View>
+            )}
 
-            <TouchableOpacity
-              style={styles.actionButton}
-              onPress={handleSubmitRating}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.actionButtonText}>{t.btnSubmitRating}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </ScrollView>
+            {/* State 1: LISTENING */}
+            {demoState === 'listening' && (
+              <View style={mergedStyles.stateCard}>
+                <Text style={mergedStyles.stateTitle}>{t.listening}</Text>
+                <Text style={mergedStyles.stateDesc}>{t.speakNow}</Text>
 
-      {/* Persistent SOS Emergency Trigger Button */}
-      <TouchableOpacity
-        style={styles.sosStickyBtn}
-        onPress={handleTriggerSOS}
-        activeOpacity={0.9}
-      >
-        <Text style={styles.sosStickyBtnText}>{t.emergencyBtn}</Text>
-      </TouchableOpacity>
+                {/* Waveform Simulation Block */}
+                <View style={mergedStyles.waveformContainer}>
+                  {waveHeights.map((h, idx) => (
+                    <View key={idx} style={[mergedStyles.waveBar, { height: h }]} />
+                  ))}
+                </View>
 
-      {/* Emergency SOS Overlay Modal */}
-      {showSosModal && (
-        <View style={styles.sosModalOverlay}>
-          <View style={[styles.sosModalContent, sosConfirmed && styles.sosConfirmedBg]}>
-            {!sosConfirmed ? (
-              <>
-                <Text style={styles.sosEmojiLarge}>🚨</Text>
-                <Text style={styles.sosModalTitle}>{t.sosTitle}</Text>
-                <Text style={styles.sosModalPrompt}>{t.sosPrompt}</Text>
-
-                <TouchableOpacity
-                  style={styles.sosConfirmBtn}
-                  onPress={handleSosConfirm}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.sosConfirmBtnText}>{t.sosYes}</Text>
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={styles.sosCancelBtn}
-                  onPress={handleSosDismiss}
-                  activeOpacity={0.8}
-                >
-                  <Text style={styles.sosCancelBtnText}>{t.sosNo}</Text>
-                </TouchableOpacity>
-              </>
-            ) : (
-              <>
-                <Text style={styles.sosEmojiLarge}>✓</Text>
-                <Text style={styles.sosSentTitle}>{t.sosSentTitle}</Text>
-
-                <View style={styles.sosBulletList}>
-                  <Text style={styles.sosBulletItem}>{t.sosSentDesc1}</Text>
-                  <Text style={styles.sosBulletItem}>{t.sosSentDesc2}</Text>
-                  <Text style={styles.sosBulletItem}>{t.sosSentDesc3}</Text>
+                {/* Click to simulate preset voice commands for presentation */}
+                <View style={mergedStyles.simInputsBox}>
+                  <Text style={mergedStyles.simInputsTitle}>[Simulate Speech / बोलकर कहें]:</Text>
+                  <TouchableOpacity
+                    style={mergedStyles.simInputBtn}
+                    onPress={() => handlePresetSelect(lang === 'hi' ? 'मुझे प्लंबर चाहिए' : 'I need a plumber', 'household')}
+                  >
+                    <Text style={mergedStyles.simInputBtnText}>{t.speakPrompt1}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={mergedStyles.simInputBtn}
+                    onPress={() => handlePresetSelect(lang === 'hi' ? 'कल डॉक्टर के पास जाना है' : 'I want to visit doctor tomorrow', 'doctor')}
+                  >
+                    <Text style={mergedStyles.simInputBtnText}>{t.speakPrompt2}</Text>
+                  </TouchableOpacity>
                 </View>
 
                 <TouchableOpacity
-                  style={styles.sosCloseBtn}
-                  onPress={handleSosDismiss}
+                  style={mergedStyles.stopButton}
+                  onPress={stopListeningSimulate}
                   activeOpacity={0.8}
                 >
-                  <Text style={styles.sosCloseBtnText}>{t.sosClose}</Text>
+                  <Text style={mergedStyles.stopButtonText}>{t.stopBtn}</Text>
                 </TouchableOpacity>
-              </>
+              </View>
             )}
-          </View>
+
+            {/* State 2: VOICE TO TEXT CONFIRMATION */}
+            {demoState === 'confirm' && (
+              <View style={mergedStyles.stateCard}>
+                <Text style={mergedStyles.stateTitle}>{t.suna}</Text>
+
+                <View style={mergedStyles.transcriptionBox}>
+                  <Text style={mergedStyles.transcriptionText}>"{inputText}"</Text>
+                </View>
+
+                <Text style={mergedStyles.stateSubtitle}>{t.sahiHai}</Text>
+
+                <View style={mergedStyles.confirmButtonsRow}>
+                  <TouchableOpacity
+                    style={[mergedStyles.confirmBtn, mergedStyles.btnBadlein]}
+                    onPress={() => globalStore.setDemoState('listening')}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={mergedStyles.btnBadleinText}>{t.btnBadlein}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[mergedStyles.confirmBtn, mergedStyles.btnHaan]}
+                    onPress={handleConfirmHaan}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={mergedStyles.btnHaanText}>{t.btnHaan}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {/* State 3: AI INTENT DETECTION BOX */}
+            {demoState === 'intent' && (
+              <View style={mergedStyles.stateCard}>
+                <Text style={mergedStyles.stateTitle}>{t.intentTitle}</Text>
+
+                <View style={mergedStyles.intentBox}>
+                  <View style={mergedStyles.intentRow}>
+                    <Text style={mergedStyles.intentLabel}>{t.intentCategory}:</Text>
+                    <Text style={mergedStyles.intentValue}>HOUSEHOLD REPAIR</Text>
+                  </View>
+                  <View style={mergedStyles.intentRow}>
+                    <Text style={mergedStyles.intentLabel}>{t.intentSkill}:</Text>
+                    <Text style={mergedStyles.intentValue}>PLUMBING</Text>
+                  </View>
+                  <View style={mergedStyles.intentRow}>
+                    <Text style={mergedStyles.intentLabel}>{t.intentPriority}:</Text>
+                    <Text style={[mergedStyles.intentValue, { color: '#E65100' }]}>NORMAL</Text>
+                  </View>
+                  <View style={mergedStyles.intentRow}>
+                    <Text style={mergedStyles.intentLabel}>{t.intentLocation}:</Text>
+                    <Text style={mergedStyles.intentValue}>{t.intentHome}</Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={mergedStyles.actionButton}
+                  onPress={handleConfirmIntent}
+                  activeOpacity={0.8}
+                >
+                  <Text style={mergedStyles.actionButtonText}>{t.btnConfirmIntent}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* State 4: CONFIRM DISPATCH */}
+            {demoState === 'dispatch' && (
+              <View style={mergedStyles.stateCard}>
+                <Text style={mergedStyles.stateTitle}>{t.confirmTitle}</Text>
+                <Text style={mergedStyles.stateDesc}>{t.confirmSubtitle}</Text>
+
+                <View style={mergedStyles.confirmSummaryBox}>
+                  <View style={mergedStyles.summaryItem}>
+                    <Text style={mergedStyles.summaryEmoji}>🔧</Text>
+                    <Text style={mergedStyles.summaryText}>{inputText}</Text>
+                  </View>
+                  <View style={mergedStyles.summaryItem}>
+                    <Text style={mergedStyles.summaryEmoji}>📍</Text>
+                    <Text style={mergedStyles.summaryText}>{t.intentHome}</Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={mergedStyles.actionButton}
+                  onPress={handleSendRequest}
+                  activeOpacity={0.8}
+                >
+                  <Text style={mergedStyles.actionButtonText}>{t.btnSendRequest}</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={mergedStyles.cancelBtnTextOnly}
+                  onPress={() => globalStore.setDemoState('idle')}
+                  activeOpacity={0.7}
+                >
+                  <Text style={mergedStyles.cancelTextOnly}>{t.btnCancel}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* State 5: MATCHING ENGINE IN SEARCH */}
+            {demoState === 'matching' && (
+              <View style={mergedStyles.stateCard}>
+                <Text style={mergedStyles.stateTitle}>{t.finding}</Text>
+                <ActivityIndicator size="large" color="#2E7D32" style={mergedStyles.loader} />
+                <Text style={mergedStyles.stateSubtitle}>{t.checkingNetwork}</Text>
+
+                <View style={mergedStyles.matchingChecks}>
+                  <Text style={mergedStyles.checkItem}>{t.nearby}</Text>
+                  <Text style={mergedStyles.checkItem}>{t.trusted}</Text>
+                  <Text style={mergedStyles.checkItem}>{t.availability}</Text>
+                </View>
+
+                <Text style={mergedStyles.pleaseWaitText}>{t.pleaseWait}</Text>
+              </View>
+            )}
+
+            {/* State 6: BACKUP WARNING / ACTIVATION (USP) */}
+            {demoState === 'backup_warning' && (
+              <View style={[mergedStyles.stateCard, mergedStyles.backupCard]}>
+                <Text style={mergedStyles.backupTitleText}>{t.backupTitle}</Text>
+                <Text style={mergedStyles.backupDorryText}>{t.backupDonotWorry}</Text>
+                <Text style={mergedStyles.backupFoundText}>{t.backupFound}</Text>
+
+                <View style={mergedStyles.backupHelperBox}>
+                  <View style={mergedStyles.avatarCircleSmall}>
+                    <Text style={mergedStyles.avatarEmojiSmall}>🔧</Text>
+                  </View>
+                  <View style={mergedStyles.backupDetails}>
+                    <Text style={mergedStyles.backupHelperName}>{t.backupRaj}</Text>
+                    <Text style={mergedStyles.backupVerifiedText}>{t.backupVerified}</Text>
+                    <Text style={mergedStyles.backupRating}>⭐ 4.7 (1.2 km away)</Text>
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={[mergedStyles.actionButton, mergedStyles.backupBtn]}
+                  onPress={handleAcceptBackup}
+                  activeOpacity={0.8}
+                >
+                  <Text style={mergedStyles.actionButtonText}>{t.backupRequestBtn}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* State 7: ACTIVE REQUEST TRACKING */}
+            {demoState === 'tracking' && (
+              <View style={mergedStyles.stateCard}>
+                <Text style={mergedStyles.stateTitle}>{t.trackingTitle}</Text>
+
+                <View style={mergedStyles.helperProfileCard}>
+                  <Text style={mergedStyles.helperAvatarLarge}>👨</Text>
+                  <Text style={mergedStyles.helperNameLarge}>{getHelperDetails().name}</Text>
+                  <Text style={mergedStyles.helperType}>{getHelperDetails().type}</Text>
+                  <Text style={mergedStyles.helperRatingBadge}>⭐ {getHelperDetails().rating}</Text>
+                  <Text style={mergedStyles.helperEta}>{t.trackingEta}</Text>
+                </View>
+
+                <View style={mergedStyles.trackingTimeline}>
+                  <Text style={mergedStyles.timelineItemActive}>{t.trackingStatusAccepted}</Text>
+                  <Text style={mergedStyles.timelineItemActive}>{t.trackingStatusOnWay}</Text>
+                  <Text style={mergedStyles.timelineItemInactive}>{t.trackingStatusArrived}</Text>
+                  <Text style={mergedStyles.timelineItemInactive}>{t.trackingStatusCompleted}</Text>
+                </View>
+
+                {/* Quick action to move demo along */}
+                <TouchableOpacity
+                  style={mergedStyles.demoNextBtn}
+                  onPress={handleSimulateArrived}
+                >
+                  <Text style={mergedStyles.demoNextBtnText}>[Simulate Helper Arrival / आ गया]</Text>
+                </TouchableOpacity>
+
+                <View style={mergedStyles.trackingButtons}>
+                  <TouchableOpacity
+                    style={mergedStyles.contactBtn}
+                    onPress={() => Alert.alert(lang === 'hi' ? 'फ़ोन लगाया जा रहा है...' : 'Calling...', getHelperDetails().name)}
+                    activeOpacity={0.8}
+                  >
+                    <IconSymbol size={24} name="phone.fill" color="#FFFFFF" />
+                    <Text style={mergedStyles.contactBtnText}>{t.btnContactHelper}</Text>
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {/* State 8: HELPER ARRIVED (OTP EXPOSURE) */}
+            {demoState === 'arrived' && (
+              <View style={mergedStyles.stateCard}>
+                <Text style={mergedStyles.stateTitle}>{t.arrivedTitle}</Text>
+                <Text style={mergedStyles.stateDesc}>{t.arrivedOtpPrompt}</Text>
+
+                <View style={mergedStyles.otpCard}>
+                  <Text style={mergedStyles.otpLabel}>{t.taskOtp}</Text>
+                  <View style={mergedStyles.otpDigitsContainer}>
+                    <Text style={mergedStyles.otpDigit}>4</Text>
+                    <Text style={mergedStyles.otpDigit}>8</Text>
+                    <Text style={mergedStyles.otpDigit}>2</Text>
+                    <Text style={mergedStyles.otpDigit}>1</Text>
+                  </View>
+                  <Text style={mergedStyles.otpVerifiedText}>{t.arrivedVerified}</Text>
+                </View>
+
+                <TouchableOpacity
+                  style={mergedStyles.actionButton}
+                  onPress={handleAuthorizeStart}
+                  activeOpacity={0.8}
+                >
+                  <Text style={mergedStyles.actionButtonText}>{t.btnStartTask}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* State 9: TASK IN PROGRESS */}
+            {demoState === 'progress' && (
+              <View style={mergedStyles.stateCard}>
+                <Text style={mergedStyles.stateTitle}>{t.progressTitle}</Text>
+                <Text style={mergedStyles.stateDesc}>{t.progressDesc}</Text>
+
+                <View style={mergedStyles.progressAnimationBox}>
+                  <ActivityIndicator size="large" color="#2E7D32" />
+                  <Text style={mergedStyles.progressStartedText}>{t.progressStarted}</Text>
+                </View>
+
+                <TouchableOpacity
+                  style={mergedStyles.actionButton}
+                  onPress={handleSimulateCompleted}
+                  activeOpacity={0.8}
+                >
+                  <Text style={mergedStyles.actionButtonText}>{t.btnCompleteTask}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* State 10: TASK COMPLETED & STAR RATING */}
+            {demoState === 'completed' && (
+              <View style={mergedStyles.stateCard}>
+                <Text style={mergedStyles.stateTitle}>{t.doneTitle}</Text>
+                <Text style={mergedStyles.stateDesc}>{t.doneDesc}</Text>
+                <Text style={mergedStyles.checkoutText}>{t.doneCheckout}</Text>
+
+                <View style={mergedStyles.ratingBox}>
+                  <Text style={mergedStyles.ratingTitle}>{t.doneRatingPrompt}</Text>
+
+                  <View style={mergedStyles.starsContainer}>
+                    {[1, 2, 3, 4, 5].map((star) => (
+                      <TouchableOpacity
+                        key={star}
+                        onPress={() => globalStore.setActiveRating(star)}
+                        activeOpacity={0.7}
+                      >
+                        <Text style={[mergedStyles.ratingStar, star <= currentRating ? mergedStyles.starOn : mergedStyles.starOff]}>
+                          ★
+                        </Text>
+                      </TouchableOpacity>
+                    ))}
+                  </View>
+                </View>
+
+                <TouchableOpacity
+                  style={mergedStyles.actionButton}
+                  onPress={handleSubmitRating}
+                  activeOpacity={0.8}
+                >
+                  <Text style={mergedStyles.actionButtonText}>{t.btnSubmitRating}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* Beautiful empty spacer to ensure list contents never overlap with sticky SOS button */}
+            <View style={{ height: 120 }} />
+          </ScrollView>
+
+          {/* Persistent SOS Emergency Trigger Button */}
+          <TouchableOpacity
+            style={mergedStyles.sosStickyBtn}
+            onPress={handleTriggerSOS}
+            activeOpacity={0.9}
+          >
+            <Text style={mergedStyles.sosStickyBtnText}>{t.emergencyBtn}</Text>
+          </TouchableOpacity>
+
+          {/* Emergency SOS Overlay Modal */}
+          {showSosModal && (
+            <View style={mergedStyles.sosModalOverlay}>
+              <View style={[mergedStyles.sosModalContent, sosConfirmed && mergedStyles.sosConfirmedBg]}>
+                {!sosConfirmed ? (
+                  <>
+                    <Text style={mergedStyles.sosEmojiLarge}>🚨</Text>
+                    <Text style={mergedStyles.sosModalTitle}>{t.sosTitle}</Text>
+                    <Text style={mergedStyles.sosModalPrompt}>{t.sosPrompt}</Text>
+
+                    <TouchableOpacity
+                      style={mergedStyles.sosConfirmBtn}
+                      onPress={handleSosConfirm}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={mergedStyles.sosConfirmBtnText}>{t.sosYes}</Text>
+                    </TouchableOpacity>
+
+                    <TouchableOpacity
+                      style={mergedStyles.sosCancelBtn}
+                      onPress={handleSosDismiss}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={mergedStyles.sosCancelBtnText}>{t.sosNo}</Text>
+                    </TouchableOpacity>
+                  </>
+                ) : (
+                  <>
+                    <Text style={mergedStyles.sosEmojiLarge}>✓</Text>
+                    <Text style={mergedStyles.sosSentTitle}>{t.sosSentTitle}</Text>
+
+                    <View style={mergedStyles.sosBulletList}>
+                      <Text style={mergedStyles.sosBulletItem}>{t.sosSentDesc1}</Text>
+                      <Text style={mergedStyles.sosBulletItem}>{t.sosSentDesc2}</Text>
+                      <Text style={mergedStyles.sosBulletItem}>{t.sosSentDesc3}</Text>
+                    </View>
+
+                    <TouchableOpacity
+                      style={mergedStyles.sosCloseBtn}
+                      onPress={handleSosDismiss}
+                      activeOpacity={0.8}
+                    >
+                      <Text style={mergedStyles.sosCloseBtnText}>{t.sosClose}</Text>
+                    </TouchableOpacity>
+                  </>
+                )}
+              </View>
+            </View>
+          )}
         </View>
       )}
     </View>
@@ -792,19 +906,63 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#F5F5F5',
   },
-  devPanel: {
-    backgroundColor: '#212121',
+  modeSwitcherPanel: {
+    backgroundColor: '#1565C0',
     padding: 12,
     paddingTop: Platform.OS === 'ios' ? 50 : 25,
+    borderBottomWidth: 3,
+    borderColor: '#90CAF9',
+  },
+  modeSwitcherText: {
+    color: '#E3F2FD',
+    fontSize: 13,
+    fontWeight: '900',
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  modeBtnRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    gap: 10,
+  },
+  modeBtn: {
+    flex: 1,
+    backgroundColor: '#0D47A1',
+    height: 38,
+    borderRadius: 8,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1.5,
+    borderColor: '#42A5F5',
+  },
+  modeBtnActive: {
+    backgroundColor: '#FFFFFF',
+    borderColor: '#1E88E5',
+  },
+  modeBtnText: {
+    color: '#90CAF9',
+    fontSize: 12,
+    fontWeight: 'bold',
+  },
+  modeBtnTextActive: {
+    color: '#1565C0',
+    fontWeight: '900',
+  },
+  elderRoot: {
+    flex: 1,
+  },
+  devPanel: {
+    backgroundColor: '#212121',
+    padding: 10,
     borderBottomWidth: 3,
     borderColor: '#FFD54F',
   },
   devPanelText: {
     color: '#FFD54F',
-    fontSize: 13,
+    fontSize: 11,
     fontWeight: '900',
     textAlign: 'center',
-    marginBottom: 8,
+    marginBottom: 6,
   },
   devBtnRow: {
     flexDirection: 'row',
@@ -814,8 +972,8 @@ const styles = StyleSheet.create({
   devBtn: {
     flex: 1,
     backgroundColor: '#424242',
-    height: 38,
-    borderRadius: 8,
+    height: 32,
+    borderRadius: 6,
     alignItems: 'center',
     justifyContent: 'center',
     borderWidth: 1.5,
@@ -827,7 +985,7 @@ const styles = StyleSheet.create({
   },
   devBtnText: {
     color: '#BDBDBD',
-    fontSize: 12,
+    fontSize: 11,
     fontWeight: 'bold',
   },
   devBtnTextActive: {
@@ -839,14 +997,14 @@ const styles = StyleSheet.create({
   },
   contentContainer: {
     padding: 20,
-    paddingBottom: 110, // Avoid overlapping sticky SOS button
+    paddingBottom: 160, // Deep padding bottom to ensure list items can fully scroll clear of sticky SOS button
   },
   idleView: {
     flex: 1,
   },
   header: {
-    marginTop: 20,
-    marginBottom: 30,
+    marginTop: 10,
+    marginBottom: 20,
     alignItems: 'center',
   },
   namasteText: {
@@ -864,12 +1022,12 @@ const styles = StyleSheet.create({
   },
   voiceButtonContainer: {
     alignItems: 'center',
-    marginBottom: 35,
+    marginBottom: 30,
   },
   voiceOuterCircle: {
-    width: 200,
-    height: 200,
-    borderRadius: 100,
+    width: 190,
+    height: 190,
+    borderRadius: 95,
     backgroundColor: '#E8F5E9',
     alignItems: 'center',
     justifyContent: 'center',
@@ -888,9 +1046,9 @@ const styles = StyleSheet.create({
     }),
   },
   voiceInnerCircle: {
-    width: 170,
-    height: 170,
-    borderRadius: 85,
+    width: 160,
+    height: 160,
+    borderRadius: 80,
     backgroundColor: '#2E7D32',
     alignItems: 'center',
     justifyContent: 'center',
@@ -898,20 +1056,20 @@ const styles = StyleSheet.create({
     borderColor: '#1B5E20',
   },
   voiceEmoji: {
-    fontSize: 54,
+    fontSize: 50,
   },
   voiceButtonText: {
     color: '#FFFFFF',
-    fontSize: 22,
+    fontSize: 20,
     fontWeight: '900',
-    marginTop: 8,
+    marginTop: 6,
     textTransform: 'uppercase',
   },
   voiceButtonSubtext: {
     fontSize: 18,
     fontWeight: 'bold',
     color: '#666',
-    marginTop: 15,
+    marginTop: 12,
   },
   presetsCard: {
     backgroundColor: '#FFFFFF',
@@ -1546,3 +1704,27 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
   },
 });
+
+const originalStyles = StyleSheet.create({
+  titleContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  stepContainer: {
+    gap: 8,
+    marginBottom: 8,
+  },
+  reactLogo: {
+    height: 178,
+    width: 290,
+    bottom: 0,
+    left: 0,
+    position: 'absolute',
+  },
+});
+
+const mergedStyles = {
+  ...styles,
+  ...originalStyles,
+};
