@@ -13,6 +13,18 @@ import { Link } from 'expo-router';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useRole } from '../context/RoleContext';
 
+// Imports from the original starter home screen
+import { HelloWave } from '../../components/hello-wave';
+import ParallaxScrollView from '../../components/parallax-scroll-view';
+import { ThemedText } from '../../components/themed-text';
+import { ThemedView } from '../../components/themed-view';
+
+// Imports from our high-fidelity elder UI
+import { IconSymbol } from '../../components/ui/icon-symbol';
+import { globalStore } from '../../constants/store';
+
+const { width } = Dimensions.get('window');
+
 export default function HomeScreen() {
   const {
     role,
@@ -68,6 +80,226 @@ export default function HomeScreen() {
         </View>
       </View>
 
+      {/* RENDER VIEW ACCORDING TO SELECTED MODE */}
+      {appMode === 'developer' ? (
+        /* RENDER ORIGINAL DEVELOPER STARTER HOME SCREEN FROM MAIN (100% PRESERVED) */
+        <ParallaxScrollView
+          headerBackgroundColor={{ light: '#A1CEDC', dark: '#1D3D47' }}
+          headerImage={
+            <Image
+              source={require('../../assets/images/partial-react-logo.png')}
+              style={mergedStyles.reactLogo}
+            />
+          }>
+          <ThemedView style={mergedStyles.titleContainer}>
+            <ThemedText type="title">Ri</ThemedText>
+            <HelloWave />
+          </ThemedView>
+          <ThemedView style={mergedStyles.stepContainer}>
+            <ThemedText type="subtitle">Step 1: Try it</ThemedText>
+            <ThemedText>
+              Edit <ThemedText type="defaultSemiBold">app/(tabs)/index.tsx</ThemedText> to see changes.
+              Press{' '}
+              <ThemedText type="defaultSemiBold">
+                {Platform.select({
+                  ios: 'cmd + d',
+                  android: 'cmd + m',
+                  web: 'F12',
+                })}
+              </ThemedText>{' '}
+              to open developer tools.
+            </ThemedText>
+          </ThemedView>
+          <ThemedView style={mergedStyles.stepContainer}>
+            <Link href="/modal">
+              <Link.Trigger>
+                <ThemedText type="subtitle">Step 2: Explore</ThemedText>
+              </Link.Trigger>
+              <Link.Preview />
+              <Link.Menu>
+                <Link.MenuAction title="Action" icon="cube" onPress={() => alert('Action pressed')} />
+                <Link.MenuAction
+                  title="Share"
+                  icon="square.and.arrow.up"
+                  onPress={() => alert('Share pressed')}
+                />
+                <Link.Menu title="More" icon="ellipsis">
+                  <Link.MenuAction
+                    title="Delete"
+                    icon="trash"
+                    destructive
+                    onPress={() => alert('Delete pressed')}
+                  />
+                </Link.Menu>
+              </Link.Menu>
+            </Link>
+
+            <ThemedText>
+              {`Tap the Explore tab to learn more about what's included in this starter app.`}
+            </ThemedText>
+          </ThemedView>
+          <ThemedView style={mergedStyles.stepContainer}>
+            <ThemedText type="subtitle">Step 3: Get a fresh start</ThemedText>
+            <ThemedText>
+              {`When you're ready, run `}
+              <ThemedText type="defaultSemiBold">npm run reset-project</ThemedText> to get a fresh{' '}
+              <ThemedText type="defaultSemiBold">app</ThemedText> directory. This will move the current{' '}
+              <ThemedText type="defaultSemiBold">app</ThemedText> to{' '}
+              <ThemedText type="defaultSemiBold">app-example</ThemedText>.
+            </ThemedText>
+          </ThemedView>
+        </ParallaxScrollView>
+      ) : (
+        /* RENDER ACCESSIBLE SENIOR CITIZEN VOICE FLOW */
+        <View style={mergedStyles.elderRoot}>
+          {/* Dev Simulation Scenario Controller Banner */}
+          <View style={mergedStyles.devPanel}>
+            <Text style={mergedStyles.devPanelText}>🛠️ [DEMO CONTROLLER] Choose Scenario Flow:</Text>
+            <View style={mergedStyles.devBtnRow}>
+              <TouchableOpacity
+                style={[mergedStyles.devBtn, scenario === 'backup' && mergedStyles.devBtnActive]}
+                onPress={() => globalStore.setScenario('backup')}
+              >
+                <Text style={[mergedStyles.devBtnText, scenario === 'backup' && mergedStyles.devBtnTextActive]}>
+                  Concept: Ghar Ka Backup
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[mergedStyles.devBtn, scenario === 'regular' && mergedStyles.devBtnActive]}
+                onPress={() => globalStore.setScenario('regular')}
+              >
+                <Text style={[mergedStyles.devBtnText, scenario === 'regular' && mergedStyles.devBtnTextActive]}>
+                  Direct Match
+                </Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+
+          <ScrollView style={mergedStyles.container} contentContainerStyle={mergedStyles.contentContainer}>
+            {/* State 0: IDLE */}
+            {demoState === 'idle' && (
+              <View style={mergedStyles.idleView}>
+                {/* Header */}
+                <View style={mergedStyles.header}>
+                  <Text style={mergedStyles.namasteText}>{t.namaste}</Text>
+                  <Text style={mergedStyles.taglineText}>{t.tagline}</Text>
+                </View>
+
+                {/* Massive Microphone Button */}
+                <TouchableOpacity
+                  style={mergedStyles.voiceButtonContainer}
+                  onPress={startListening}
+                  activeOpacity={0.85}
+                >
+                  <View style={mergedStyles.voiceOuterCircle}>
+                    <View style={mergedStyles.voiceInnerCircle}>
+                      <Text style={mergedStyles.voiceEmoji}>🎙️</Text>
+                      <Text style={mergedStyles.voiceButtonText}>{t.micBtn}</Text>
+                    </View>
+                  </View>
+                  <Text style={mergedStyles.voiceButtonSubtext}>{t.micSub}</Text>
+                </TouchableOpacity>
+
+                {/* Simulated preset quick helpers for elderly click */}
+                <View style={mergedStyles.presetsCard}>
+                  <Text style={mergedStyles.categoryTitle}>{t.categories}</Text>
+
+                  <TouchableOpacity
+                    style={mergedStyles.presetRow}
+                    onPress={() => handlePresetSelect(lang === 'hi' ? 'मुझे प्लंबर चाहिए' : 'I need a plumber', 'household')}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={mergedStyles.presetText}>{t.catHousehold}</Text>
+                    <IconSymbol size={24} name="chevron.right" color="#2E7D32" />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={mergedStyles.presetRow}
+                    onPress={() => handlePresetSelect(lang === 'hi' ? 'मुझे दवाई ला दो' : 'Get me medicine', 'medicine')}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={mergedStyles.presetText}>{t.catMedicine}</Text>
+                    <IconSymbol size={24} name="chevron.right" color="#2E7D32" />
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={mergedStyles.presetRow}
+                    onPress={() => handlePresetSelect(lang === 'hi' ? 'कल डॉक्टर के पास जाना है' : 'I have to visit doctor tomorrow', 'doctor')}
+                    activeOpacity={0.7}
+                  >
+                    <Text style={mergedStyles.presetText}>{t.catDoctor}</Text>
+                    <IconSymbol size={24} name="chevron.right" color="#2E7D32" />
+                  </TouchableOpacity>
+                </View>
+              </View>
+            )}
+
+            {/* State 1: LISTENING */}
+            {demoState === 'listening' && (
+              <View style={mergedStyles.stateCard}>
+                <Text style={mergedStyles.stateTitle}>{t.listening}</Text>
+                <Text style={mergedStyles.stateDesc}>{t.speakNow}</Text>
+
+                {/* Waveform Simulation Block */}
+                <View style={mergedStyles.waveformContainer}>
+                  {waveHeights.map((h, idx) => (
+                    <View key={idx} style={[mergedStyles.waveBar, { height: h }]} />
+                  ))}
+                </View>
+
+                {/* Click to simulate preset voice commands for presentation */}
+                <View style={mergedStyles.simInputsBox}>
+                  <Text style={mergedStyles.simInputsTitle}>[Simulate Speech / बोलकर कहें]:</Text>
+                  <TouchableOpacity
+                    style={mergedStyles.simInputBtn}
+                    onPress={() => handlePresetSelect(lang === 'hi' ? 'मुझे प्लंबर चाहिए' : 'I need a plumber', 'household')}
+                  >
+                    <Text style={mergedStyles.simInputBtnText}>{t.speakPrompt1}</Text>
+                  </TouchableOpacity>
+                  <TouchableOpacity
+                    style={mergedStyles.simInputBtn}
+                    onPress={() => handlePresetSelect(lang === 'hi' ? 'कल डॉक्टर के पास जाना है' : 'I want to visit doctor tomorrow', 'doctor')}
+                  >
+                    <Text style={mergedStyles.simInputBtnText}>{t.speakPrompt2}</Text>
+                  </TouchableOpacity>
+                </View>
+
+                <TouchableOpacity
+                  style={mergedStyles.stopButton}
+                  onPress={stopListeningSimulate}
+                  activeOpacity={0.8}
+                >
+                  <Text style={mergedStyles.stopButtonText}>{t.stopBtn}</Text>
+                </TouchableOpacity>
+              </View>
+            )}
+
+            {/* State 2: VOICE TO TEXT CONFIRMATION */}
+            {demoState === 'confirm' && (
+              <View style={mergedStyles.stateCard}>
+                <Text style={mergedStyles.stateTitle}>{t.suna}</Text>
+
+                <View style={mergedStyles.transcriptionBox}>
+                  <Text style={mergedStyles.transcriptionText}>"{inputText}"</Text>
+                </View>
+
+                <Text style={mergedStyles.stateSubtitle}>{t.sahiHai}</Text>
+
+                <View style={mergedStyles.confirmButtonsRow}>
+                  <TouchableOpacity
+                    style={[mergedStyles.confirmBtn, mergedStyles.btnBadlein]}
+                    onPress={() => globalStore.setDemoState('listening')}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={mergedStyles.btnBadleinText}>{t.btnBadlein}</Text>
+                  </TouchableOpacity>
+
+                  <TouchableOpacity
+                    style={[mergedStyles.confirmBtn, mergedStyles.btnHaan]}
+                    onPress={handleConfirmHaan}
+                    activeOpacity={0.8}
+                  >
+                    <Text style={mergedStyles.btnHaanText}>{t.btnHaan}</Text>
       {/* ========================================================= */}
       {/* ==================== 1. FAMILY VIEW ==================== */}
       {/* ========================================================= */}
@@ -1706,3 +1938,8 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 });
+
+const mergedStyles = {
+  ...styles,
+  ...originalStyles,
+};

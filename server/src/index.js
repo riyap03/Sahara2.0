@@ -1,11 +1,8 @@
-const express = require('express');
-const cors = require('cors');
-const dotenv = require('dotenv');
+require('dotenv').config();
 const connectDB = require('./config/db');
 
-dotenv.config();
-
 connectDB();
+HEAD
 
 const app = express();
 
@@ -30,3 +27,4 @@ app.listen(PORT, () => {
 });
 
 module.exports = app;
+
