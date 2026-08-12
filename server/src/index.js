@@ -15,7 +15,7 @@ app.use(express.json());
 app.get('/health', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'Ghar Ka Backup API is running',
+    message: 'Sahara API is running',
     timestamp: new Date().toISOString()
   });
 });
