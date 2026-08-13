@@ -8,9 +8,11 @@ import { OpaqueColorValue, type StyleProp, type TextStyle } from 'react-native';
 export type IconSymbolName =
   | 'house.fill'
   | 'paperplane.fill'
+  | 'list.clipboard.fill'
   | 'chevron.left.forwardslash.chevron.right'
   | 'chevron.right'
   | 'people.fill'
+  | 'person.2.fill'
   | 'person.fill'
   | 'bell.fill'
   | 'warning.fill'
@@ -22,14 +24,17 @@ export type IconSymbolName =
   | 'wrench.fill'
   | 'medkit.fill'
   | 'exclamationmark.triangle.fill'
-  | 'person.badge.shield.checkmark.fill';
+  | 'person.badge.shield.checkmark.fill'
+  | 'plus';
 
 const MAPPING: Record<IconSymbolName, ComponentProps<typeof MaterialIcons>['name']> = {
   'house.fill': 'home',
   'paperplane.fill': 'send',
+  'list.clipboard.fill': 'assignment',
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
   'people.fill': 'people',
+  'person.2.fill': 'group',
   'person.fill': 'person',
   'bell.fill': 'notifications',
   'warning.fill': 'warning',
@@ -42,6 +47,7 @@ const MAPPING: Record<IconSymbolName, ComponentProps<typeof MaterialIcons>['name
   'medkit.fill': 'medical-services',
   'exclamationmark.triangle.fill': 'warning',
   'person.badge.shield.checkmark.fill': 'admin-panel-settings',
+  plus: 'add',
 };
 
 /**

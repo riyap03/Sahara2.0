@@ -1,11 +1,11 @@
 {
   "name": "ghar-ka-backup-server",
   "version": "1.0.0",
-  "description": "Backend matching engine and APIs for Ghar Ka Backup SIH MVP",
+  "description": "Backend matching engine and APIs for Sahara SIH MVP",
   "main": "src/index.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
+    "start": "node server.js",
+    "dev": "nodemon server.js",
     "seed": "node src/seed.js",
     "test": "node src/test-matching.js"
   },

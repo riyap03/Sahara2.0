@@ -58,6 +58,12 @@ const userSchema = new mongoose.Schema({
   isAvailable: {
     type: Boolean,
     default: true
+  },
+  familyCode: {
+    type: String,
+    unique: true,
+    sparse: true,
+    default: null
   }
 }, {
   timestamps: true

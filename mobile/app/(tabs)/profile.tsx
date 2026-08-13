@@ -1,368 +1,222 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, Alert } from 'react-native';
-import { IconSymbol } from '../../components/ui/icon-symbol';
+import { Alert, Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { IconSymbol } from '@/components/ui/icon-symbol';
+import { useRole } from '../context/RoleContext';
 import { globalStore } from '../../constants/store';
 
 export default function ProfileScreen() {
-  const [lang, setLang] = useState(globalStore.getLanguage());
+  const router = useRouter();
+  const { role, user, logout } = useRole();
   const [profile, setProfile] = useState(globalStore.getProfile());
+  const [connectedSenior, setConnectedSenior] = useState(globalStore.getConnectedSenior());
 
   useEffect(() => {
     return globalStore.subscribe(() => {
-      setLang(globalStore.getLanguage());
       setProfile(globalStore.getProfile());
+      setConnectedSenior(globalStore.getConnectedSenior());
     });
   }, []);
 
-  const t = {
-    hi: {
-      title: 'मेरी प्रोफ़ाइल',
-      age: 'उम्र',
-      phone: 'फ़ोन नंबर',
-      address: 'घर का पता',
-      emergencyContact: 'आपातकालीन संपर्क (Emergency Contact)',
-      emergencyDesc: 'मुसीबत के समय इस नंबर पर तुरंत सूचना जाएगी',
-      langTitle: 'भाषा बदलें (Change Language)',
-      selectLang: 'कृपया अपनी पसंदीदा भाषा चुनें:',
-      footerNote: '👵 घर का बैकअप हर समय आपकी सुरक्षा के लिए तैयार है।',
-      daughter: 'बेटी (Daughter)',
-    },
-    en: {
-      title: 'My Profile',
-      age: 'Age',
-      phone: 'Phone Number',
-      address: 'Home Address',
-      emergencyContact: 'Emergency Contact',
-      emergencyDesc: 'In case of emergency, this contact will be notified immediately.',
-      langTitle: 'Change Language',
-      selectLang: 'Please select your preferred language:',
-      footerNote: '👵 Ghar Ka Backup is always ready to protect you.',
-      daughter: 'Daughter',
-    },
-  }[lang];
-
-  const handleLanguageChange = (newLang: 'hi' | 'en') => {
-    globalStore.setLanguage(newLang);
+  const doLogout = () => {
+    logout();
+    router.replace('/landing');
   };
 
+  const handleLogout = () => {
+    if (Platform.OS === 'web') {
+      doLogout();
+      return;
+    }
+
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Logout', style: 'destructive', onPress: doLogout },
+    ]);
+  };
+
+  const displayName =
+    role === 'family'
+      ? user?.name || 'Family Member'
+      : role === 'provider' || role === 'volunteer'
+        ? user?.name || 'Helper'
+        : profile.name;
+
   return (
-    <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
-      {/* Title */}
+    <ScrollView style={styles.container} contentContainerStyle={styles.content}>
       <View style={styles.header}>
-        <Text style={styles.titleText}>{t.title}</Text>
+        <Text style={styles.title}>My Profile</Text>
+        <Text style={styles.subtitle}>Sahara</Text>
       </View>
 
-      {/* Profile Card */}
       <View style={styles.card}>
-        <View style={styles.avatarRow}>
+        <View style={styles.identityRow}>
           <View style={styles.avatarCircle}>
-            <Text style={styles.avatarText}>👵</Text>
+            <Text style={styles.avatarText}>{role === 'family' ? 'F' : role === 'provider' ? 'H' : 'S'}</Text>
           </View>
-          <View style={styles.nameContainer}>
-            <Text style={styles.nameText}>{profile.name}</Text>
-            <Text style={styles.subtext}>{t.age}: {profile.age}</Text>
-          </View>
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.infoRow}>
-          <IconSymbol size={24} name="phone.fill" color="#2E7D32" style={styles.infoIcon} />
-          <View style={styles.infoContent}>
-            <Text style={styles.label}>{t.phone}</Text>
-            <Text style={styles.value}>{profile.phone}</Text>
-          </View>
-        </View>
-
-        <View style={styles.infoRow}>
-          <IconSymbol size={24} name="house.fill" color="#2E7D32" style={styles.infoIcon} />
-          <View style={styles.infoContent}>
-            <Text style={styles.label}>{t.address}</Text>
-            <Text style={styles.value}>{profile.address}</Text>
+          <View style={styles.identityCopy}>
+            <Text style={styles.name}>{displayName}</Text>
+            <Text style={styles.roleText}>{role ? roleLabel(role) : 'No role selected'}</Text>
           </View>
         </View>
       </View>
 
-      {/* Emergency Contact */}
-      <View style={[styles.card, styles.emergencyCard]}>
-        <View style={styles.emergencyHeader}>
-          <Text style={styles.emergencyEmoji}>🆘</Text>
-          <Text style={styles.emergencyTitle}>{t.emergencyContact}</Text>
+      {role === 'family' && connectedSenior ? (
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Connected Parent</Text>
+          <InfoRow icon="person.fill" label="Senior" value={connectedSenior.name} />
+          <InfoRow icon="map.fill" label="City" value={connectedSenior.city || 'Not added'} />
+          <InfoRow icon="people.fill" label="Relationship" value={connectedSenior.relationship || 'Family'} />
         </View>
-        <Text style={styles.emergencyDesc}>{t.emergencyDesc}</Text>
-        <View style={styles.emergencyBox}>
-          <View style={styles.emergencyContactInfo}>
-            <Text style={styles.emergencyName}>{profile.emergencyContactName}</Text>
-            <Text style={styles.emergencyPhone}>{profile.emergencyContactPhone}</Text>
-          </View>
-          <TouchableOpacity
-            style={styles.callButton}
-            activeOpacity={0.7}
-            onPress={() => Alert.alert(lang === 'hi' ? 'फ़ोन लगाया जा रहा है...' : 'Calling...', profile.emergencyContactPhone)}
-          >
-            <IconSymbol size={28} name="phone.fill" color="#FFFFFF" />
-            <Text style={styles.callButtonText}>{lang === 'hi' ? 'फ़ोन करें' : 'Call'}</Text>
-          </TouchableOpacity>
+      ) : (
+        <View style={styles.card}>
+          <Text style={styles.sectionTitle}>Account Details</Text>
+          <InfoRow icon="phone.fill" label="Phone" value={profile.phone || user?.phone || 'Not added'} />
+          <InfoRow icon="map.fill" label="Location" value={profile.city || profile.address || 'Not added'} />
         </View>
-      </View>
+      )}
 
-      {/* Language Selector */}
-      <View style={styles.card}>
-        <Text style={styles.sectionTitle}>{t.langTitle}</Text>
-        <Text style={styles.sectionSubtitle}>{t.selectLang}</Text>
-
-        <View style={styles.langButtonsRow}>
-          <TouchableOpacity
-            style={[
-              styles.langButton,
-              lang === 'hi' && styles.langButtonActive,
-            ]}
-            onPress={() => handleLanguageChange('hi')}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.langText, lang === 'hi' && styles.langTextActive]}>हिन्दी</Text>
-            {lang === 'hi' && <Text style={styles.checkMark}>✓</Text>}
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[
-              styles.langButton,
-              lang === 'en' && styles.langButtonActive,
-            ]}
-            onPress={() => handleLanguageChange('en')}
-            activeOpacity={0.8}
-          >
-            <Text style={[styles.langText, lang === 'en' && styles.langTextActive]}>English</Text>
-            {lang === 'en' && <Text style={styles.checkMark}>✓</Text>}
-          </TouchableOpacity>
-        </View>
-      </View>
-
-      {/* Footer reassuring note */}
-      <Text style={styles.footerNote}>{t.footerNote}</Text>
+      <TouchableOpacity activeOpacity={0.86} style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutText}>Logout</Text>
+      </TouchableOpacity>
     </ScrollView>
+  );
+}
+
+function roleLabel(role: string) {
+  if (role === 'senior') return 'Senior';
+  if (role === 'family') return 'Family';
+  return 'Helper';
+}
+
+function InfoRow({
+  icon,
+  label,
+  value,
+}: {
+  icon: React.ComponentProps<typeof IconSymbol>['name'];
+  label: string;
+  value: string;
+}) {
+  return (
+    <View style={styles.infoRow}>
+      <IconSymbol name={icon} size={22} color="#0F766E" />
+      <View style={styles.infoCopy}>
+        <Text style={styles.label}>{label}</Text>
+        <Text style={styles.value}>{value}</Text>
+      </View>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#F5F5F5',
+    backgroundColor: '#F8FAFC',
   },
-  contentContainer: {
+  content: {
     padding: 20,
-    paddingTop: Platform.OS === 'ios' ? 60 : 40,
+    paddingTop: 42,
     paddingBottom: 40,
   },
   header: {
-    marginBottom: 20,
+    marginBottom: 18,
   },
-  titleText: {
+  title: {
+    color: '#111827',
     fontSize: 28,
     fontWeight: '900',
-    color: '#1B5E20',
+    textAlign: 'center',
+  },
+  subtitle: {
+    color: '#0F766E',
+    fontSize: 13,
+    fontWeight: '900',
+    letterSpacing: 0.5,
+    marginTop: 4,
     textAlign: 'center',
   },
   card: {
     backgroundColor: '#FFFFFF',
-    borderRadius: 16,
-    padding: 20,
-    marginBottom: 20,
-    borderWidth: 2,
-    borderColor: '#E0E0E0',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.1,
-        shadowRadius: 6,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
+    borderColor: '#E5E7EB',
+    borderRadius: 8,
+    borderWidth: 1,
+    marginBottom: 16,
+    padding: 16,
   },
-  avatarRow: {
-    flexDirection: 'row',
+  identityRow: {
     alignItems: 'center',
-    marginBottom: 10,
+    flexDirection: 'row',
+    gap: 14,
   },
   avatarCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#E8F5E9',
     alignItems: 'center',
-    justifyContent: 'center',
+    backgroundColor: '#CCFBF1',
+    borderColor: '#0F766E',
+    borderRadius: 32,
     borderWidth: 2,
-    borderColor: '#2E7D32',
+    height: 64,
+    justifyContent: 'center',
+    width: 64,
   },
   avatarText: {
-    fontSize: 36,
+    color: '#0F766E',
+    fontSize: 26,
+    fontWeight: '900',
   },
-  nameContainer: {
-    marginLeft: 15,
+  identityCopy: {
     flex: 1,
   },
-  nameText: {
+  name: {
+    color: '#111827',
     fontSize: 22,
-    fontWeight: 'bold',
-    color: '#212121',
+    fontWeight: '900',
   },
-  subtext: {
-    fontSize: 16,
-    color: '#666666',
-    fontWeight: '600',
-    marginTop: 2,
+  roleText: {
+    color: '#64748B',
+    fontSize: 15,
+    fontWeight: '700',
+    marginTop: 3,
   },
-  divider: {
-    height: 2,
-    backgroundColor: '#EEEEEE',
-    marginVertical: 15,
+  sectionTitle: {
+    color: '#111827',
+    fontSize: 19,
+    fontWeight: '900',
+    marginBottom: 8,
   },
   infoRow: {
-    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 15,
+    borderTopColor: '#F3F4F6',
+    borderTopWidth: 1,
+    flexDirection: 'row',
+    gap: 12,
+    paddingVertical: 12,
   },
-  infoIcon: {
-    marginRight: 15,
-  },
-  infoContent: {
+  infoCopy: {
     flex: 1,
   },
   label: {
-    fontSize: 14,
-    color: '#666666',
-    fontWeight: 'bold',
+    color: '#64748B',
+    fontSize: 12,
+    fontWeight: '900',
+    textTransform: 'uppercase',
   },
   value: {
-    fontSize: 18,
-    color: '#212121',
-    fontWeight: '600',
+    color: '#111827',
+    fontSize: 16,
+    fontWeight: '800',
     marginTop: 2,
   },
-  emergencyCard: {
-    borderColor: '#D32F2F',
-    borderWidth: 3,
-    backgroundColor: '#FFEBEE',
-  },
-  emergencyHeader: {
-    flexDirection: 'row',
+  logoutButton: {
     alignItems: 'center',
-    marginBottom: 10,
-  },
-  emergencyEmoji: {
-    fontSize: 26,
-    marginRight: 10,
-  },
-  emergencyTitle: {
-    fontSize: 22,
-    fontWeight: '900',
-    color: '#C62828',
-  },
-  emergencyDesc: {
-    fontSize: 15,
-    color: '#424242',
-    lineHeight: 20,
-    marginBottom: 15,
-    fontWeight: '600',
-  },
-  emergencyBox: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 15,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    borderWidth: 2,
-    borderColor: '#EF5350',
-  },
-  emergencyContactInfo: {
-    flex: 1,
-    marginRight: 10,
-  },
-  emergencyName: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    color: '#212121',
-  },
-  emergencyPhone: {
-    fontSize: 16,
-    color: '#C62828',
-    fontWeight: 'bold',
-    marginTop: 4,
-  },
-  callButton: {
-    backgroundColor: '#D32F2F',
-    paddingVertical: 10,
-    paddingHorizontal: 15,
-    borderRadius: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    minWidth: 100,
-    height: 48,
+    backgroundColor: '#DC2626',
+    borderRadius: 8,
     justifyContent: 'center',
+    minHeight: 56,
   },
-  callButtonText: {
+  logoutText: {
     color: '#FFFFFF',
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginLeft: 5,
-  },
-  sectionTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    color: '#1B5E20',
-  },
-  sectionSubtitle: {
-    fontSize: 15,
-    color: '#666666',
-    marginTop: 4,
-    marginBottom: 15,
-    fontWeight: '600',
-  },
-  langButtonsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    gap: 12,
-  },
-  langButton: {
-    flex: 1,
-    height: 54,
-    borderRadius: 12,
-    borderWidth: 2,
-    borderColor: '#BDBDBD',
-    backgroundColor: '#F5F5F5',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  langButtonActive: {
-    borderColor: '#2E7D32',
-    backgroundColor: '#E8F5E9',
-    borderWidth: 3,
-  },
-  langText: {
     fontSize: 18,
-    fontWeight: 'bold',
-    color: '#616161',
-  },
-  langTextActive: {
-    color: '#1B5E20',
-  },
-  checkMark: {
-    color: '#1B5E20',
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginLeft: 8,
-  },
-  footerNote: {
-    fontSize: 16,
-    color: '#555555',
-    fontWeight: 'bold',
-    textAlign: 'center',
-    marginTop: 10,
-    lineHeight: 22,
+    fontWeight: '900',
   },
 });

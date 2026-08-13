@@ -1,10 +1,10 @@
-# Ghar Ka Backup — Backend API
+# Sahara — Backend API
 
 **Tagline:** Don't monitor seniors. Build a backup around them.
 
 ## Project Overview
 
-Ghar Ka Backup is a hyper-local trusted support network for elderly people living independently. It connects seniors with trusted helpers through a priority-based backup chain.
+Sahara is a hyper-local trusted support network for elderly people living independently. It connects seniors with trusted helpers through a priority-based backup chain.
 
 ## Architecture
 

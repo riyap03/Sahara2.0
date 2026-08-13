@@ -15,7 +15,7 @@ const runTests = async () => {
     await connectDB();
     await mongoose.connection.dropDatabase();
 
-    console.log('\n=== Ghar Ka Backup — Integration Tests ===\n');
+    console.log('\n=== Sahara — Integration Tests ===\n');
 
     const hashPassword = async (pwd) => bcrypt.hash(pwd, 12);
 
@@ -146,8 +146,8 @@ const runTests = async () => {
 
     const request3 = await HelpRequest.create({
       senior: lonelySenior._id,
-      type: 'electricity',
-      description: 'Light nahi chal raha hai',
+      type: 'plumbing',
+      description: 'Paani nahi aa raha hai',
       priority: 'normal',
       status: 'pending',
       location: { lat: 26.9300, lng: 75.8000 }
@@ -157,9 +157,8 @@ const runTests = async () => {
     console.log(`Level: ${chain3.level}`);
     console.log(`Helper: ${chain3.helper?.name}`);
     console.assert(chain3.level === 3, 'Should match provider directly');
+    console.assert(chain3.helper !== null, 'Should have a helper');
     console.log('PASS\n');
-
-    console.log('Test 7: No provider available — escalation');
     const noProviderSenior = await User.create({
       name: 'Remote Senior',
       email: 'remote@test.com',

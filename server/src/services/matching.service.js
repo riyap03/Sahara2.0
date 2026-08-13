@@ -2,6 +2,21 @@ const ServiceProvider = require('../models/ServiceProvider');
 const TrustedContact = require('../models/TrustedContact');
 const User = require('../models/User');
 
+const REQUEST_TO_PROVIDER_TYPE = {
+  plumbing: 'plumber',
+  electricity: 'electrician',
+  medicine: 'chemist',
+  doctor: 'caregiver',
+  hospital: 'caregiver',
+  bank: 'other',
+  government: 'other',
+  grocery: 'other',
+  transport: 'driver',
+  repair: 'technician',
+  house_help: 'house_help',
+  other: 'other'
+};
+
 const findBestMatch = async (request) => {
   const { type, senior, location } = request;
 
@@ -27,8 +42,9 @@ const findBestMatch = async (request) => {
   }
 
   if (!bestMatch) {
+    const providerType = REQUEST_TO_PROVIDER_TYPE[type] || type;
     const providers = await ServiceProvider.find({
-      serviceType: type,
+      serviceType: providerType,
       isAvailable: true,
       isVerified: true
     }).populate('user', 'name phone location isAvailable');
@@ -74,6 +90,8 @@ const calculateMatchScore = (provider, requestLocation) => {
     requestLocation.lat,
     requestLocation.lng
   );
+
+  if (distance > 50) return 0;
 
   let score = 0;
 

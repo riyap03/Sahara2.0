@@ -5,7 +5,7 @@ const detectIntent = (text) => {
     'plumber': { intent: 'plumbing', priority: 'normal', keywords: ['plumber', 'pump', 'pipe', 'leak', 'water', 'tap', 'drain'] },
     'electrician': { intent: 'electricity', priority: 'normal', keywords: ['electric', 'light', 'wire', 'fan', 'power', 'switch'] },
     'doctor': { intent: 'doctor', priority: 'high', keywords: ['doctor', 'clinic', 'checkup', 'appointment'] },
-    'hospital': { intent: 'hospital', priority: 'critical', keywords: ['hospital', 'emergency', 'accident', 'pain', 'critical'] },
+    'hospital': { intent: 'hospital', priority: 'critical', keywords: ['hospital', 'emergency', 'accident', 'pain', 'critical', 'gir', 'gir gaya', 'gir gayi', 'attack', 'heart', 'breath'] },
     'medicine': { intent: 'medicine', priority: 'normal', keywords: ['medicine', 'medication', 'pharmacy', 'pills', 'doctor'] },
     'grocery': { intent: 'grocery', priority: 'normal', keywords: ['grocery', 'vegetables', 'food', 'market', 'shopping'] },
     'transport': { intent: 'transport', priority: 'normal', keywords: ['car', 'taxi', 'bus', 'travel', 'drop', 'pickup'] },

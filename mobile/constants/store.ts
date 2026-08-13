@@ -20,24 +20,53 @@ export interface RequestItem {
   rating?: number;
 }
 
-class GlobalStore {
-  private language: 'hi' | 'en' = 'hi';
-  private listeners: Set<() => void> = new Set();
+export type AppRole = 'senior' | 'family' | 'provider' | 'volunteer';
 
-  private profile = {
-    name: 'Shanti Devi (शांति देवी)',
+export interface SeniorProfile {
+  id?: string;
+  name: string;
+  age?: number;
+  phone?: string;
+  address?: string;
+  city?: string;
+  emergencyContactName?: string;
+  emergencyContactPhone?: string;
+  familyCode?: string;
+}
+
+export interface ConnectedSenior {
+  id?: string;
+  name: string;
+  city?: string;
+  relationship?: string;
+  familyCode?: string;
+  phone?: string;
+}
+
+class GlobalStore {
+  private language: 'hi' | 'en' = 'en';
+  private listeners: Set<() => void> = new Set();
+  private authToken: string | null = null;
+  private role: AppRole | null = null;
+  private user: any = null;
+  private connectedSenior: ConnectedSenior | null = null;
+  private familyCodeDirectory: Record<string, ConnectedSenior> = {};
+
+  private profile: SeniorProfile = {
+    name: 'Shanti Devi',
     age: 68,
     phone: '+91 98765 43210',
-    address: 'Plot No. 12, Sector 3, Vaishali Nagar, Jaipur (जयपुर)',
-    emergencyContactName: 'Kiran (किरण - Daughter)',
+    address: 'Vaishali Nagar, Jaipur',
+    city: 'Jaipur',
+    emergencyContactName: 'Kiran - Daughter',
     emergencyContactPhone: '+91 99887 76655',
   };
 
   private trustedPeople: TrustedPerson[] = [
     {
       id: '1',
-      name: 'Amit Sharma (अमित शर्मा)',
-      role: 'Neighbour (पड़ोसी)',
+      name: 'Amit Sharma',
+      role: 'Neighbour',
       phone: '+91 98290 12345',
       availability: 'Available',
       isVerified: true,
@@ -45,8 +74,8 @@ class GlobalStore {
     },
     {
       id: '2',
-      name: 'Rakesh (राकेश)',
-      role: 'Society Guard (गार्ड)',
+      name: 'Rakesh',
+      role: 'Society Guard',
       phone: '+91 94140 54321',
       availability: 'Available',
       isVerified: true,
@@ -54,17 +83,17 @@ class GlobalStore {
     },
     {
       id: '3',
-      name: 'Raj Plumbing (राज प्लंबिंग)',
-      role: 'Verified Provider (प्लंबर)',
+      name: 'Raj Plumbing',
+      role: 'Verified Provider',
       phone: '+91 91660 98765',
-      availability: 'Available',
+      availability: 'Busy',
       isVerified: true,
       trustScore: 92,
     },
     {
       id: '4',
-      name: 'Dr. Mehta (डॉ. मेहता)',
-      role: 'Family Doctor (पारिवारिक डॉक्टर)',
+      name: 'Dr. Mehta',
+      role: 'Family Doctor',
       phone: '+91 98280 67890',
       availability: 'Available',
       isVerified: true,
@@ -76,28 +105,21 @@ class GlobalStore {
     {
       id: 'r1',
       category: 'Medicine',
-      title: 'Medicine Pickup (दवाई लाना)',
+      title: 'Medicine Pickup',
       status: 'Completed',
-      time: 'Yesterday (कल)',
+      time: 'Yesterday',
       helperName: 'Amit Sharma',
       rating: 5,
     },
     {
       id: 'r2',
       category: 'Doctor',
-      title: 'Doctor Visit Assistance (डॉक्टर के पास जाना)',
+      title: 'Doctor Visit Assistance',
       status: 'Scheduled',
-      time: 'Tomorrow (आने वाला कल - 10:00 AM)',
+      time: 'Tomorrow - 10:00 AM',
       helperName: 'Dr. Mehta',
     },
   ];
-
-  // Active simulated request state
-  private demoFlowState: 'idle' | 'listening' | 'confirm' | 'intent' | 'dispatch' | 'matching' | 'backup_warning' | 'tracking' | 'arrived' | 'progress' | 'completed' = 'idle';
-  private demoInputText: string = '';
-  private activeRequestCategory: string = '';
-  private simulatedScenario: 'regular' | 'backup' | 'emergency' = 'backup'; // default backup to showcase core concept
-  private activeRating: number = 0;
 
   getLanguage() {
     return this.language;
@@ -108,11 +130,60 @@ class GlobalStore {
     this.notify();
   }
 
+  getToken() {
+    return this.authToken;
+  }
+
+  setToken(token: string | null) {
+    this.authToken = token;
+    this.notify();
+  }
+
+  getRole() {
+    return this.role;
+  }
+
+  setRole(role: AppRole | null) {
+    this.role = role;
+    this.notify();
+  }
+
+  getUser() {
+    return this.user;
+  }
+
+  setUser(user: any) {
+    this.user = user;
+    this.notify();
+  }
+
+  getConnectedSenior() {
+    return this.connectedSenior;
+  }
+
+  setConnectedSenior(senior: ConnectedSenior | null) {
+    this.connectedSenior = senior;
+    this.notify();
+  }
+
+  registerSeniorCode(familyCode: string, senior: ConnectedSenior) {
+    const normalizedCode = familyCode.trim().toUpperCase();
+    this.familyCodeDirectory[normalizedCode] = {
+      ...senior,
+      familyCode: normalizedCode,
+    };
+    this.notify();
+  }
+
+  findSeniorByCode(familyCode: string) {
+    return this.familyCodeDirectory[familyCode.trim().toUpperCase()] || null;
+  }
+
   getProfile() {
     return this.profile;
   }
 
-  updateProfile(updated: typeof this.profile) {
+  updateProfile(updated: Partial<SeniorProfile>) {
     this.profile = { ...this.profile, ...updated };
     this.notify();
   }
@@ -137,51 +208,9 @@ class GlobalStore {
   addRequest(req: Omit<RequestItem, 'id'>) {
     const newReq: RequestItem = {
       ...req,
-      id: 'req-' + Date.now().toString(),
+      id: `req-${Date.now()}`,
     };
     this.requests.unshift(newReq);
-    this.notify();
-  }
-
-  // Simulation controls
-  getDemoState() {
-    return this.demoFlowState;
-  }
-
-  setDemoState(state: typeof this.demoFlowState) {
-    this.demoFlowState = state;
-    this.notify();
-  }
-
-  getDemoInputText() {
-    return this.demoInputText;
-  }
-
-  setDemoInputText(text: string, category: string = 'household') {
-    this.demoInputText = text;
-    this.activeRequestCategory = category;
-    this.notify();
-  }
-
-  getCategory() {
-    return this.activeRequestCategory;
-  }
-
-  getScenario() {
-    return this.simulatedScenario;
-  }
-
-  setScenario(scenario: typeof this.simulatedScenario) {
-    this.simulatedScenario = scenario;
-    this.notify();
-  }
-
-  getActiveRating() {
-    return this.activeRating;
-  }
-
-  setActiveRating(rating: number) {
-    this.activeRating = rating;
     this.notify();
   }
 
@@ -193,7 +222,7 @@ class GlobalStore {
   }
 
   private notify() {
-    this.listeners.forEach(listener => listener());
+    this.listeners.forEach((listener) => listener());
   }
 }
 

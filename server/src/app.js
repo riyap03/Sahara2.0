@@ -14,14 +14,14 @@ app.use(express.json());
 app.get('/', (req, res) => {
   res.json({
     success: true,
-    message: 'Ghar Ka Backup API is running'
+    message: 'Sahara API is running'
   });
 });
 
 app.get('/api/health', (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'Ghar Ka Backup API is healthy',
+    message: 'Sahara API is healthy',
     database: 'connected'
   });
 });
@@ -32,8 +32,10 @@ app.use('/api/trusted-circle', require('./routes/trustedCircle.routes'));
 app.use('/api/providers', require('./routes/provider.routes'));
 app.use('/api/requests', require('./routes/request.routes'));
 app.use('/api/tasks', require('./routes/task.routes'));
+app.use('/api/matching', require('./routes/matching'));
 app.use('/api/emergency', require('./routes/emergency.routes'));
 app.use('/api/family', require('./routes/family.routes'));
+app.use('/api/family-code', require('./routes/familyCode.routes'));
 app.use('/api/notifications', require('./routes/notification.routes'));
 
 app.use((req, res) => {

@@ -1,0 +1,67 @@
+
+> mobile@1.0.0 start
+> expo start --web --port 8081
+
+Starting project at C:\Users\RIYA\Sahara2.0\mobile
+React Compiler enabled
+Starting Metro Bundler
+Waiting on http://localhost:8081
+Logs for your project will appear below.
+Web node_modules\expo-router\entry.js ▓░░░░░░░░░░░░░░░  9.8% ( 5/16)
+λ node_modules\expo-router\node\render.js ░░░░░░░░░░░░░░░░  5.5% ( 16/131)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓░░░░░░░░░░ 39.4% (256/408)
+λ node_modules\expo-router\node\render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓░░░ 83.2% (541/593)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓░░ 91.4% (693/725)
+λ node_modules\expo-router\node\render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 95.3% (748/767)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.8% (730/742)
+λ node_modules\expo-router\node\render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.7% (771/772)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.8% (730/742)
+λ node_modules\expo-router\node\render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.7% (771/772)
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 96.8% (907/960)
+λ node_modules\expo-router\node\render.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (1116/1122)
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ node_modules\expo-router\node\render.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 23560ms node_modules\expo-router\node\render.js (1138 modules)
+λ Bundled 6083ms node_modules\expo-router\node\render.js (1 module)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.6% (1093/1095)
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (1114/1116)
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓░ 99.9% (1127/1127)
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 15413ms node_modules\expo-router\entry.js (1 module)
+Web Bundled 33093ms node_modules\expo-router\entry.js (1127 modules)
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 53ms node_modules\expo-router\node\render.js (1 module)
+Web Bundled 2716ms node_modules\expo-router\entry.js (1 module)
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web node_modules\expo-router\entry.js ▓▓▓▓▓▓▓▓▓░░░░░░░ 59.0% (421/550)
+Web Bundled 7047ms node_modules\expo-router\entry.js (1107 modules)
+ LOG  [web] Logs will appear in the browser console
+Unable to resolve "../../constants/store" from "app\(tabs)\_layout.tsx"
+[0m [90m  6 |[39m [36mimport[39m { [33mColors[39m } [36mfrom[39m [32m'../../constants/theme'[39m[33m;[39m
+ [90m  7 |[39m [36mimport[39m { useColorScheme } [36mfrom[39m [32m'../../hooks/use-color-scheme'[39m[33m;[39m
+[31m[1m>[22m[39m[90m  8 |[39m [36mimport[39m { globalStore } [36mfrom[39m [32m'../../constants/store'[39m[33m;[39m
+ [90m    |[39m                              [31m[1m^[22m[39m
+ [90m  9 |[39m [36mimport[39m { useRole } [36mfrom[39m [32m'../context/RoleContext'[39m[33m;[39m
+ [90m 10 |[39m
+ [90m 11 |[39m [36mexport[39m [36mdefault[39m [36mfunction[39m [33mTabLayout[39m() {[0m
+
+Import stack:
+
+ app\(tabs)\_layout.tsx
+ | import "../../constants/store"
+
+ app (require.context)
+
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+Web Bundled 569ms node_modules\expo-router\entry.js (1 module)
+λ Bundled 703ms node_modules\expo-router\node\render.js (1 module)
+Web Bundled 55ms node_modules\expo-router\entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console
+Web node_modules\expo-router\entry.js ░░░░░░░░░░░░░░░░  0.0% (0/1)
+λ Bundled 151ms node_modules\expo-router\node\render.js (1 module)
+Web Bundled 1106ms node_modules\expo-router\entry.js (1 module)
+Web Bundled 55ms node_modules\expo-router\entry.js (1 module)
+ LOG  [web] Logs will appear in the browser console

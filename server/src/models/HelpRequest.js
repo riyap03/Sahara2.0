@@ -48,6 +48,7 @@ const helpRequestSchema = new mongoose.Schema(
       enum: [
         "pending",
         "searching",
+        "assigned",
         "accepted",
         "in_progress",
         "completed",

@@ -13,13 +13,11 @@ import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useRole } from '../context/RoleContext';
 
 export default function TabTwoScreen() {
-  const { role, isEmergencyAlertActive, setIsEmergencyAlertActive } = useRole();
+  const { role } = useRole();
 
-  // Family tabs
   const [activeTab, setActiveTab] = useState<'network' | 'profile' | 'history' | 'notifications'>('network');
-
-  // Volunteer tabs
   const [volunteerTab, setVolunteerTab] = useState<'tasks' | 'trust' | 'preferences'>('tasks');
+  const [isEmergencyAlertActive, setIsEmergencyAlertActive] = useState(false);
 
   const handleCall = (phone: string) => {
     Linking.openURL(`tel:${phone}`).catch(() => alert('Could not initiate call'));
@@ -30,7 +28,7 @@ export default function TabTwoScreen() {
       <StatusBar barStyle="dark-content" />
 
       {/* ==================== FAMILY MODE DETAIL HEADER ==================== */}
-      {role === 'family' && (
+      {(role === 'family' || role === 'senior') && (
         <View style={styles.tabContainer}>
           <TouchableOpacity
             style={[styles.tabButton, activeTab === 'network' && styles.activeTabButton]}
@@ -107,7 +105,7 @@ export default function TabTwoScreen() {
         {/* ======================================================== */}
         {/* ==================== FAMILY SCHEMAS ==================== */}
         {/* ======================================================== */}
-        {role === 'family' && (
+        {(role === 'family' || role === 'senior') && (
           <View>
             {/* ==================== 1. TRUSTED NETWORK PANEL ==================== */}
             {activeTab === 'network' && (

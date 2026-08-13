@@ -6,9 +6,11 @@ import { IconSymbol } from '../../components/ui/icon-symbol';
 import { Colors } from '../../constants/theme';
 import { useColorScheme } from '../../hooks/use-color-scheme';
 import { globalStore } from '../../constants/store';
+import { useRole } from '../context/RoleContext';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { role } = useRole();
   const [lang, setLang] = useState(globalStore.getLanguage());
 
   useEffect(() => {
@@ -19,11 +21,11 @@ export default function TabLayout() {
 
   const t = {
     hi: {
-      home: 'होम (Home)',
-      requests: 'मदद (Requests)',
-      trusted: 'भरोसेमंद (Trusted)',
-      profile: 'मेरी प्रोफ़ाइल',
-      explore: 'एक्सप्लोर (Explore)',
+      home: 'होम',
+      requests: 'मदद',
+      trusted: 'भरोसेमंद',
+      profile: 'प्रोफ़ाइल',
+      explore: 'एक्सप्लोर',
     },
     en: {
       home: 'Home',
@@ -34,10 +36,13 @@ export default function TabLayout() {
     },
   }[lang];
 
+  const isFamily = role === 'family' || role === 'senior';
+  const isProvider = role === 'provider' || role === 'volunteer';
+
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#2E7D32', // Deep reassure green for high contrast & senior-friendly
+        tabBarActiveTintColor: '#2E7D32',
         tabBarInactiveTintColor: '#666',
         headerShown: false,
         tabBarButton: HapticTab,
@@ -68,13 +73,15 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="list.clipboard.fill" color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="trusted"
-        options={{
-          title: t.trusted,
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.2.fill" color={color} />,
-        }}
-      />
+      {isFamily && (
+        <Tabs.Screen
+          name="trusted"
+          options={{
+            title: t.trusted,
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.2.fill" color={color} />,
+          }}
+        />
+      )}
       <Tabs.Screen
         name="profile"
         options={{
@@ -82,13 +89,15 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
         }}
       />
-      <Tabs.Screen
-        name="explore"
-        options={{
-          title: t.explore,
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-        }}
-      />
+      {(isFamily || isProvider) && (
+        <Tabs.Screen
+          name="explore"
+          options={{
+            title: t.explore,
+            tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+          }}
+        />
+      )}
     </Tabs>
   );
 }

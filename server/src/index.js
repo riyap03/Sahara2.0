@@ -1,30 +1,16 @@
 require('dotenv').config();
 const connectDB = require('./config/db');
 
-connectDB();
-HEAD
+connectDB().then(() => {
+  const app = require('./app');
 
-const app = express();
+  const PORT = process.env.PORT || 5000;
 
-app.use(cors());
-app.use(express.json());
-
-app.get('/health', (req, res) => {
-  res.status(200).json({
-    success: true,
-    message: 'Sahara API is running',
-    timestamp: new Date().toISOString()
+  app.listen(PORT, () => {
+    console.log(`Server running on port ${PORT}`);
   });
+}).catch((err) => {
+  console.error('Failed to connect to database:', err);
+  process.exit(1);
 });
-
-app.use('/api/matching', require('./routes/matching'));
-app.use('/api/tasks', require('./routes/tasks'));
-
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
-
-module.exports = app;
 
