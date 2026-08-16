@@ -17,14 +17,14 @@ const runBackupChain = async (requestId) => {
   const result = await findBestMatch({
     type: helpRequest.type,
     senior: helpRequest.senior,
-    location: helpRequest.location || helpRequest.senior.location
+    location: helpRequest.location || helpRequest.senior?.location
   });
 
   if (result.level === 4) {
     helpRequest.status = 'escalated';
     await helpRequest.save();
 
-    await createNotification(helpRequest.senior, 'BACKUP_ESCALATED', 'Backup Escalation', 'No suitable helper found. Request escalated.');
+    await createNotification(helpRequest.senior._id, 'BACKUP_ESCALATED', 'Backup Escalation', 'No suitable helper found. Request escalated.');
 
     if (helpRequest.priority === 'critical') {
       await escalateEmergency(helpRequest);
@@ -51,8 +51,8 @@ const runBackupChain = async (requestId) => {
     status: 'assigned'
   });
 
-  await createNotification(result.helper, 'HELPER_ASSIGNED', 'New Task Assigned', `You have been assigned a new ${helpRequest.type} task.`);
-  await createNotification(helpRequest.senior, 'HELPER_ASSIGNED', 'Helper Assigned', `${result.helper.name} has been assigned to your request. OTP: ${otp}`);
+  await createNotification(result.helper._id, 'HELPER_ASSIGNED', 'New Task Assigned', `You have been assigned a new ${helpRequest.type} task.`);
+  await createNotification(helpRequest.senior._id, 'HELPER_ASSIGNED', 'Helper Assigned', `${result.helper.name} has been assigned to your request. OTP: ${otp}`);
 
   return {
     level: result.level,
@@ -75,7 +75,7 @@ const escalateEmergency = async (helpRequest) => {
     await createNotification(family._id, 'EMERGENCY', 'Emergency Alert', `Emergency escalation for senior request.`);
   }
 
-  await createNotification(helpRequest.senior, 'EMERGENCY', 'Emergency Services', 'Emergency services have been notified.');
+  await createNotification(helpRequest.senior._id, 'EMERGENCY', 'Emergency Services', 'Emergency services have been notified.');
 };
 
 const createNotification = async (recipientId, type, title, message, relatedRequest, relatedTask) => {

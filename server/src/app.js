@@ -1,5 +1,6 @@
 const express = require('express');
 const cors = require('cors');
+const errorHandler = require('./middleware/error.middleware');
 
 const app = express();
 
@@ -37,6 +38,8 @@ app.use('/api/emergency', require('./routes/emergency.routes'));
 app.use('/api/family', require('./routes/family.routes'));
 app.use('/api/family-code', require('./routes/familyCode.routes'));
 app.use('/api/notifications', require('./routes/notification.routes'));
+
+app.use(errorHandler);
 
 app.use((req, res) => {
   res.status(404).json({

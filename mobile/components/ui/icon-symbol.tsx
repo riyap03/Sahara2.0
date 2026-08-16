@@ -25,7 +25,9 @@ export type IconSymbolName =
   | 'medkit.fill'
   | 'exclamationmark.triangle.fill'
   | 'person.badge.shield.checkmark.fill'
-  | 'plus';
+  | 'plus'
+  | 'eye'
+  | 'eye-off';
 
 const MAPPING: Record<IconSymbolName, ComponentProps<typeof MaterialIcons>['name']> = {
   'house.fill': 'home',
@@ -48,6 +50,8 @@ const MAPPING: Record<IconSymbolName, ComponentProps<typeof MaterialIcons>['name
   'exclamationmark.triangle.fill': 'warning',
   'person.badge.shield.checkmark.fill': 'admin-panel-settings',
   plus: 'add',
+  eye: 'visibility',
+  'eye-off': 'visibility-off',
 };
 
 /**

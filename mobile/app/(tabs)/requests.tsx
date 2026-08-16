@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, ScrollView, Platform, TouchableOpacity, Alert } from 'react-native';
+import { Alert, Platform, StyleSheet, Text, View, ScrollView, TouchableOpacity } from 'react-native';
 import { IconSymbol } from '../../components/ui/icon-symbol';
 import { globalStore } from '../../constants/store';
+import { shadow } from '../../constants/theme';
+import { useRole } from '../context/RoleContext';
+import { useRouter } from 'expo-router';
 
 export default function RequestsScreen() {
+  const router = useRouter();
+  const { logout } = useRole();
   const [lang, setLang] = useState(globalStore.getLanguage());
   const [requestsList, setRequestsList] = useState(globalStore.getRequests());
 
@@ -13,6 +18,18 @@ export default function RequestsScreen() {
       setRequestsList([...globalStore.getRequests()]);
     });
   }, []);
+
+  const handleLogout = () => {
+    if (Platform.OS === 'web') {
+      logout();
+      router.replace('/landing');
+      return;
+    }
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Logout', style: 'destructive', onPress: () => { logout(); router.replace('/landing'); } },
+    ]);
+  };
 
   const t = {
     hi: {
@@ -158,6 +175,9 @@ export default function RequestsScreen() {
           })}
         </View>
       )}
+      <TouchableOpacity activeOpacity={0.8} style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutText}>Logout</Text>
+      </TouchableOpacity>
     </ScrollView>
   );
 }
@@ -213,17 +233,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 18,
     borderWidth: 2.5,
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 3 },
-        shadowOpacity: 0.1,
-        shadowRadius: 5,
-      },
-      android: {
-        elevation: 3,
-      },
-    }),
+    ...shadow({ color: '#000', offset: { width: 0, height: 3 }, opacity: 0.1, radius: 5, elevation: 3 }),
   },
   cardHeader: {
     flexDirection: 'row',
@@ -332,5 +342,19 @@ const styles = StyleSheet.create({
     fontSize: 16,
     fontWeight: 'bold',
     marginLeft: 8,
+  },
+  logoutButton: {
+    alignItems: 'center',
+    backgroundColor: '#DC2626',
+    borderRadius: 8,
+    justifyContent: 'center',
+    marginTop: 16,
+    minHeight: 52,
+    paddingHorizontal: 18,
+  },
+  logoutText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '900',
   },
 });

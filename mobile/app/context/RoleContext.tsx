@@ -69,3 +69,7 @@ export function useRole() {
   }
   return context;
 }
+
+export default function RoleContextRoute() {
+  return null;
+}

@@ -60,16 +60,16 @@ const getProviders = async (req, res) => {
       filter.serviceType = serviceType;
     }
 
-    if (city) {
-      filter['user.city'] = city;
-    }
-
     if (verified === 'true') {
       filter.isVerified = true;
     }
 
-    const providers = await ServiceProvider.find(filter)
+    let providers = await ServiceProvider.find(filter)
       .populate('user', 'name phone city address location isVerified');
+
+    if (city) {
+      providers = providers.filter((p) => p.user?.city === city);
+    }
 
     res.json({
       success: true,

@@ -10,13 +10,26 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useRouter } from 'expo-router';
 import { globalStore } from '../../constants/store';
 import { useRole } from '../context/RoleContext';
 
-type Step = 'form' | 'code' | 'invite' | 'inviteDone';
+const Clipboard = (() => {
+  try {
+    return require('expo-clipboard');
+  } catch {
+    return {
+      setStringAsync: async () => undefined,
+    };
+  }
+})();
 
-const API_URL = 'http://localhost:5000/api';
+type Step = 'form' | 'code' | 'invite' | 'inviteDone' | 'login';
+
+import { API_BASE_URL } from '../../constants/api';
+
+const API_URL = API_BASE_URL;
 
 export default function SeniorOnboardingScreen() {
   const router = useRouter();
@@ -25,15 +38,21 @@ export default function SeniorOnboardingScreen() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [familyCode, setFamilyCode] = useState('');
   const [inviteName, setInviteName] = useState('');
   const [invitePhone, setInvitePhone] = useState('');
   const [inviteRelationship, setInviteRelationship] = useState('Daughter');
   const [isLoading, setIsLoading] = useState(false);
+  const [loginPhone, setLoginPhone] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
+ 
 
   const createProfile = async () => {
-    if (!name.trim() || !phone.trim() || !city.trim()) {
-      Alert.alert('Missing Info', 'Please fill in all fields.');
+    if (!name.trim() || phone.trim().length !== 10 || !city.trim() || password.trim().length < 6) {
+      Alert.alert('Missing Info', 'Please enter a valid 10-digit phone, city, and a 6+ digit password.');
       return;
     }
 
@@ -44,9 +63,9 @@ export default function SeniorOnboardingScreen() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
-          email: `${phone.trim()}@gharkabackup.local`,
+          email: `${phone.trim()}@gharkabackup.com`,
           phone: phone.trim(),
-          password: 'password123',
+          password: password.trim(),
           role: 'senior',
           address: { city: city.trim() },
         }),
@@ -54,7 +73,18 @@ export default function SeniorOnboardingScreen() {
       const data = await response.json();
 
       if (!data.success) {
-        Alert.alert('Error', data.message || 'Registration failed.');
+        if (response.status === 409) {
+          Alert.alert(
+            'Account Already Exists',
+            'An account with this phone number or email already exists. Would you like to login instead?',
+            [
+              { text: 'Cancel', style: 'cancel' },
+              { text: 'Login', onPress: () => setStep('login') },
+            ]
+          );
+        } else {
+          Alert.alert('Error', data.message || 'Registration failed.');
+        }
         return;
       }
 
@@ -140,6 +170,83 @@ export default function SeniorOnboardingScreen() {
 
   const openDashboard = () => router.replace('/(tabs)');
 
+  const handleLogin = async () => {
+    if (!loginPhone.trim() || loginPassword.trim().length < 6) {
+      Alert.alert('Missing Info', 'Please enter phone number and a 6+ digit password.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: loginPhone.trim(), password: loginPassword.trim() }),
+      });
+      const data = await response.json();
+
+      if (!data.success) {
+        Alert.alert('Login Failed', data.message || 'Invalid credentials.');
+        return;
+      }
+
+      setRole('senior');
+      setToken(data.token);
+      setUser(data.user);
+      globalStore.updateProfile({
+        id: data.user?.id,
+        name: data.user?.name || '',
+        phone: data.user?.phone || '',
+      });
+      router.replace('/(tabs)');
+    } catch {
+      Alert.alert('Error', 'Could not connect to server.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (step === 'login') {
+    return (
+      <Screen>
+        <Text style={styles.title}>Login</Text>
+        <Text style={styles.subtitle}>Access your existing Sahara account</Text>
+        <View style={styles.field}>
+          <Text style={styles.label}>Phone Number</Text>
+          <TextInput
+            style={styles.input}
+            value={loginPhone}
+            onChangeText={setLoginPhone}
+            placeholder="10-digit mobile number"
+            placeholderTextColor="#9CA3AF"
+            keyboardType="phone-pad"
+            maxLength={10}
+          />
+          {loginPhone.length > 0 && loginPhone.length !== 10 && (
+            <Text style={styles.errorText}>Please enter a valid 10-digit phone number</Text>
+          )}
+        </View>
+        <View style={styles.field}>
+          <Text style={styles.label}>Password</Text>
+          <View style={styles.passwordRow}>
+            <TextInput
+              style={styles.input}
+              value={loginPassword}
+              onChangeText={setLoginPassword}
+              placeholderTextColor="#9CA3AF"
+              secureTextEntry={!showLoginPassword}
+            />
+            <TouchableOpacity onPress={() => setShowLoginPassword(!showLoginPassword)} style={styles.eyeButton}>
+              <IconSymbol name={showLoginPassword ? 'eye-off' : 'eye'} size={20} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+        </View>
+        <Button title={isLoading ? 'Logging in...' : 'Login'} onPress={handleLogin} disabled={isLoading} />
+        <Button title="Back" variant="ghost" onPress={() => setStep('form')} />
+      </Screen>
+    );
+  }
+
   if (step === 'code') {
     return (
       <Screen>
@@ -150,7 +257,13 @@ export default function SeniorOnboardingScreen() {
         <Text style={styles.helperText}>
           Share this code with your son, daughter or trusted family member.
         </Text>
-        <Button title="Copy Code" onPress={() => Alert.alert('Copied', `Family Code: ${familyCode}`)} />
+        <Button
+   title="Copy Code"
+   onPress={() => {
+     Alert.alert('Copied', `Family Code ${familyCode} copied to clipboard`);
+     Clipboard.setStringAsync(familyCode);
+   }}
+/>
         <Button title="Invite Family Member" variant="secondary" onPress={() => setStep('invite')} />
         <Button title="Open My Dashboard" variant="ghost" onPress={openDashboard} />
       </Screen>
@@ -201,9 +314,40 @@ export default function SeniorOnboardingScreen() {
       <Text style={styles.title}>Welcome 👋</Text>
       <Text style={styles.subtitle}>Let us create your Sahara.</Text>
       <FormField label="Name" value={name} onChangeText={setName} />
-      <FormField label="Phone Number" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+      <View style={styles.field}>
+        <Text style={styles.label}>Phone Number</Text>
+        <TextInput
+          style={styles.input}
+          value={phone}
+          onChangeText={setPhone}
+          placeholder="10-digit mobile number"
+          placeholderTextColor="#9CA3AF"
+          keyboardType="phone-pad"
+          maxLength={10}
+        />
+        {phone.length > 0 && phone.length !== 10 && (
+          <Text style={styles.errorText}>Please enter a valid 10-digit phone number</Text>
+        )}
+      </View>
       <FormField label="City" value={city} onChangeText={setCity} />
+      <View style={styles.field}>
+        <Text style={styles.label}>Password</Text>
+        <View style={styles.passwordRow}>
+          <TextInput
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+            placeholderTextColor="#9CA3AF"
+            secureTextEntry={!showPassword}
+          />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
+            <IconSymbol name={showPassword ? 'eye-off' : 'eye'} size={20} color="#6B7280" />
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.passwordNote}>Password must be at least 6 characters</Text>
+      </View>
       <Button title={isLoading ? 'Creating...' : 'Continue'} onPress={createProfile} disabled={isLoading} />
+      <Button title="I already have an account" variant="ghost" onPress={() => setStep('login')} />
     </Screen>
   );
 }
@@ -301,6 +445,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     minHeight: 54,
     paddingHorizontal: 14,
+  },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  eyeButton: {
+    padding: 8,
+  },
+  passwordNote: {
+    color: '#6B7280',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 6,
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 6,
   },
   codeBox: {
     alignItems: 'center',

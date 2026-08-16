@@ -73,15 +73,14 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="list.clipboard.fill" color={color} />,
         }}
       />
-      {isFamily && (
-        <Tabs.Screen
-          name="trusted"
-          options={{
-            title: t.trusted,
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.2.fill" color={color} />,
-          }}
-        />
-      )}
+      <Tabs.Screen
+        name="trusted"
+        options={{
+          href: isFamily ? undefined : null,
+          title: t.trusted,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.2.fill" color={color} />,
+        }}
+      />
       <Tabs.Screen
         name="profile"
         options={{
@@ -89,15 +88,14 @@ export default function TabLayout() {
           tabBarIcon: ({ color }) => <IconSymbol size={28} name="person.fill" color={color} />,
         }}
       />
-      {(isFamily || isProvider) && (
-        <Tabs.Screen
-          name="explore"
-          options={{
-            title: t.explore,
-            tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
-          }}
-        />
-      )}
+      <Tabs.Screen
+        name="explore"
+        options={{
+          href: (isFamily || isProvider) ? undefined : null,
+          title: t.explore,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="paperplane.fill" color={color} />,
+        }}
+      />
     </Tabs>
   );
 }

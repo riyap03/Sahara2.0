@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema({
     unique: true,
     lowercase: true,
     trim: true,
-    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,3})+$/, 'Please add a valid email']
+    match: [/^\w+([.-]?\w+)*@\w+([.-]?\w+)*(\.\w{2,})+$/, 'Please add a valid email']
   },
   phone: {
     type: String,
@@ -61,7 +61,7 @@ const userSchema = new mongoose.Schema({
   },
   familyCode: {
     type: String,
-    unique: true,
+    
     sparse: true,
     default: null
   }

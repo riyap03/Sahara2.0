@@ -10,11 +10,14 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useRouter } from 'expo-router';
 import { globalStore } from '../../constants/store';
 import { useRole } from '../context/RoleContext';
 
-const API_URL = 'http://localhost:5000/api';
+import { API_BASE_URL } from '../../constants/api';
+
+const API_URL = API_BASE_URL;
 const skills = ['Household Help', 'Grocery', 'Medical Assistance', 'Travel Assistance'];
 
 export default function HelperOnboardingScreen() {
@@ -23,8 +26,14 @@ export default function HelperOnboardingScreen() {
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
   const [city, setCity] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [selectedSkills, setSelectedSkills] = useState<string[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isLogin, setIsLogin] = useState(false);
+  const [loginPhone, setLoginPhone] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   const toggleSkill = (skill: string) => {
     setSelectedSkills((current) =>
@@ -33,8 +42,8 @@ export default function HelperOnboardingScreen() {
   };
 
   const createProfile = async () => {
-    if (!name.trim() || !phone.trim() || !city.trim() || selectedSkills.length === 0) {
-      Alert.alert('Missing Info', 'Please fill in all fields and select at least one skill.');
+    if (!name.trim() || phone.trim().length !== 10 || selectedSkills.length === 0 || password.trim().length < 6) {
+      Alert.alert('Missing Info', 'Please enter a valid 10-digit phone, select at least one skill, and use a 6+ digit password.');
       return;
     }
 
@@ -45,9 +54,9 @@ export default function HelperOnboardingScreen() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
-          email: `${phone.trim()}@gharkabackup.local`,
+          email: `${phone.trim()}@gharkabackup.com`,
           phone: phone.trim(),
-          password: 'password123',
+          password: password.trim(),
           role: 'provider',
           address: { city: city.trim() },
           skills: selectedSkills,
@@ -73,14 +82,136 @@ export default function HelperOnboardingScreen() {
     }
   };
 
+  const handleLogin = async () => {
+    if (!loginPhone.trim() || loginPassword.trim().length < 6) {
+      Alert.alert('Missing Info', 'Please enter phone number and a 6+ digit password.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: loginPhone.trim(), password: loginPassword.trim() }),
+      });
+      const data = await response.json();
+
+      if (!data.success) {
+        Alert.alert('Login Failed', data.message || 'Invalid credentials.');
+        return;
+      }
+
+      setRole('provider');
+      setToken(data.token);
+      setUser(data.user);
+      globalStore.setRole('provider');
+      globalStore.setToken(data.token);
+      globalStore.setUser(data.user);
+      router.replace('/(tabs)/explore');
+    } catch {
+      Alert.alert('Error', 'Could not connect to server.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (isLogin) {
+    return (
+      <SafeAreaView style={styles.safeArea}>
+        <StatusBar barStyle="dark-content" />
+        <ScrollView contentContainerStyle={styles.content}>
+          <Text style={styles.title}>Helper Login</Text>
+          <Text style={styles.subtitle}>Access your existing helper account</Text>
+          <View style={styles.field}>
+            <Text style={styles.label}>Phone Number</Text>
+            <TextInput
+              style={styles.input}
+              value={loginPhone}
+              onChangeText={setLoginPhone}
+              placeholder="10-digit mobile number"
+              placeholderTextColor="#9CA3AF"
+              keyboardType="phone-pad"
+              maxLength={10}
+            />
+            {loginPhone.length > 0 && loginPhone.length !== 10 && (
+              <Text style={styles.errorText}>Please enter a valid 10-digit phone number</Text>
+            )}
+          </View>
+          <View style={styles.field}>
+            <Text style={styles.label}>Password</Text>
+            <View style={styles.passwordRow}>
+              <TextInput
+                style={styles.input}
+                value={loginPassword}
+                onChangeText={setLoginPassword}
+                placeholderTextColor="#9CA3AF"
+                secureTextEntry={!showLoginPassword}
+              />
+              <TouchableOpacity onPress={() => setShowLoginPassword(!showLoginPassword)} style={styles.eyeButton}>
+                <IconSymbol name={showLoginPassword ? 'eye-off' : 'eye'} size={20} color="#6B7280" />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <TouchableOpacity
+            activeOpacity={0.86}
+            disabled={isLoading}
+            onPress={handleLogin}
+            style={[styles.button, isLoading && styles.disabledButton]}
+          >
+            <Text style={styles.buttonText}>{isLoading ? 'Logging in...' : 'Login'}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            activeOpacity={0.8}
+            onPress={() => setIsLogin(false)}
+            style={styles.loginToggle}
+          >
+            <Text style={styles.loginToggleText}>New here? Register instead</Text>
+          </TouchableOpacity>
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   return (
     <SafeAreaView style={styles.safeArea}>
       <StatusBar barStyle="dark-content" />
       <ScrollView contentContainerStyle={styles.content}>
         <Text style={styles.title}>Create Helper Profile</Text>
         <FormField label="Name" value={name} onChangeText={setName} />
-        <FormField label="Phone" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
+        <View style={styles.field}>
+          <Text style={styles.label}>Phone Number</Text>
+          <TextInput
+            style={styles.input}
+            value={phone}
+            onChangeText={setPhone}
+            placeholder="10-digit mobile number"
+            placeholderTextColor="#9CA3AF"
+            keyboardType="phone-pad"
+            maxLength={10}
+          />
+          {phone.length > 0 && phone.length !== 10 && (
+            <Text style={styles.errorText}>Please enter a valid 10-digit phone number</Text>
+          )}
+        </View>
         <FormField label="City" value={city} onChangeText={setCity} />
+
+        <View style={styles.field}>
+          <Text style={styles.label}>Password</Text>
+          <View style={styles.passwordRow}>
+            <TextInput
+              style={styles.input}
+              value={password}
+              onChangeText={setPassword}
+              placeholderTextColor="#9CA3AF"
+              secureTextEntry={!showPassword}
+            />
+            <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
+              <IconSymbol name={showPassword ? 'eye-off' : 'eye'} size={20} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+          <Text style={styles.passwordNote}>Password must be at least 6 characters</Text>
+        </View>
 
         <View style={styles.field}>
           <Text style={styles.label}>Skills</Text>
@@ -111,6 +242,13 @@ export default function HelperOnboardingScreen() {
           style={[styles.button, isLoading && styles.disabledButton]}
         >
           <Text style={styles.buttonText}>{isLoading ? 'Creating...' : 'Continue'}</Text>
+        </TouchableOpacity>
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={() => setIsLogin(true)}
+          style={styles.loginToggle}
+        >
+          <Text style={styles.loginToggleText}>Already have an account? Login</Text>
         </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
@@ -163,6 +301,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     minHeight: 54,
     paddingHorizontal: 14,
+  },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  eyeButton: {
+    padding: 8,
+  },
+  passwordNote: {
+    color: '#6B7280',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 6,
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 6,
   },
   skillList: {
     gap: 10,
@@ -224,5 +382,14 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: '900',
+  },
+  loginToggle: {
+    marginTop: 16,
+    alignItems: 'center',
+  },
+  loginToggleText: {
+    color: '#2563EB',
+    fontSize: 15,
+    fontWeight: '800',
   },
 });

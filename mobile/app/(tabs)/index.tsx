@@ -1,5 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
+  Alert,
+  Platform,
   SafeAreaView,
   ScrollView,
   StatusBar,
@@ -11,11 +13,12 @@ import {
 import { useRouter } from 'expo-router';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useRole } from '../context/RoleContext';
+import { shadow } from '../../constants/theme';
 import { globalStore } from '../../constants/store';
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { role } = useRole();
+  const { role, logout } = useRole();
   const [profile, setProfile] = useState(globalStore.getProfile());
   const [connectedSenior, setConnectedSenior] = useState(globalStore.getConnectedSenior());
 
@@ -25,6 +28,18 @@ export default function HomeScreen() {
       setConnectedSenior(globalStore.getConnectedSenior());
     });
   }, []);
+
+  const handleLogout = () => {
+    if (Platform.OS === 'web') {
+      logout();
+      router.replace('/landing');
+      return;
+    }
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Logout', style: 'destructive', onPress: () => { logout(); router.replace('/landing'); } },
+    ]);
+  };
 
   if (role === 'family') {
     if (!connectedSenior) {
@@ -38,6 +53,9 @@ export default function HomeScreen() {
             </Text>
             <PrimaryButton title="Enter Family Code" onPress={() => router.replace('/onboarding/family')} />
           </View>
+          <TouchableOpacity activeOpacity={0.8} style={styles.logoutButton} onPress={handleLogout}>
+            <Text style={styles.logoutText}>Logout</Text>
+          </TouchableOpacity>
         </Screen>
       );
     }
@@ -59,6 +77,9 @@ export default function HomeScreen() {
             Family Code and stays attached to this parent.
           </Text>
         </View>
+        <TouchableOpacity activeOpacity={0.8} style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
       </Screen>
     );
   }
@@ -75,6 +96,9 @@ export default function HomeScreen() {
         </View>
         <InfoRow icon="checkmark.circle.fill" title="Medicine pickup" detail="Near Vaishali Nagar - 2.1 km" />
         <InfoRow icon="wrench.fill" title="Household repair" detail="Backup helper needed today" />
+        <TouchableOpacity activeOpacity={0.8} style={styles.logoutButton} onPress={handleLogout}>
+          <Text style={styles.logoutText}>Logout</Text>
+        </TouchableOpacity>
       </Screen>
     );
   }
@@ -106,6 +130,9 @@ export default function HomeScreen() {
         <Text style={styles.bodyText}>Create a request and your trusted backup network can respond.</Text>
         <PrimaryButton title="Request Help" onPress={() => router.push('/(tabs)/requests')} />
       </View>
+      <TouchableOpacity activeOpacity={0.8} style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutText}>Logout</Text>
+      </TouchableOpacity>
     </Screen>
   );
 }
@@ -209,11 +236,7 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     marginBottom: 16,
     padding: 20,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    ...shadow({ color: '#0F172A', offset: { width: 0, height: 3 }, opacity: 0.08, radius: 8, elevation: 3 }),
   },
   brand: {
     color: '#0F766E',
@@ -352,6 +375,20 @@ const styles = StyleSheet.create({
   primaryButtonText: {
     color: '#FFFFFF',
     fontSize: 17,
+    fontWeight: '900',
+  },
+  logoutButton: {
+    alignItems: 'center',
+    backgroundColor: '#DC2626',
+    borderRadius: 8,
+    justifyContent: 'center',
+    marginTop: 16,
+    minHeight: 52,
+    paddingHorizontal: 18,
+  },
+  logoutText: {
+    color: '#FFFFFF',
+    fontSize: 16,
     fontWeight: '900',
   },
 });

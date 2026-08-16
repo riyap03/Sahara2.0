@@ -6,9 +6,8 @@ const connectDB = async () => {
   try {
     const uri = process.env.MONGODB_URI || 'mongodb://localhost:27017/ghar-ka-backup';
 
-    // Attempt standard connection
     const conn = await mongoose.connect(uri, {
-      serverSelectionTimeoutMS: 2000 // fail fast if local mongod is not running
+      serverSelectionTimeoutMS: 2000
     });
     console.log(`MongoDB Connected: ${conn.connection.host}`);
   } catch (error) {
@@ -24,6 +23,21 @@ const connectDB = async () => {
       process.exit(1);
     }
   }
+
+ try {
+  await mongoose.connection.collection('users').dropIndex('familyCode_1');
+} catch (err) {
+  if (err.code !== 27 && err.codeName !== 'IndexNotFound') {
+    console.warn('Could not drop familyCode index:', err.message);
+  }
+}
+
+try {
+  await mongoose.connection.collection('users').createIndex({ familyCode: 1 }, { sparse: true });
+  console.log('familyCode index ensured (sparse)');
+} catch (err) {
+  console.warn('Could not create familyCode index:', err.message);
+}
 };
 
 module.exports = connectDB;

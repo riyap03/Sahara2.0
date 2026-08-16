@@ -1,9 +1,14 @@
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, Text, View, TouchableOpacity, ScrollView, Platform, TextInput, Alert, Modal } from 'react-native';
+import { Alert, Platform, StyleSheet, Text, View, TouchableOpacity, ScrollView, TextInput, Modal } from 'react-native';
 import { IconSymbol } from '../../components/ui/icon-symbol';
 import { globalStore, TrustedPerson } from '../../constants/store';
+import { shadow } from '../../constants/theme';
+import { useRole } from '../context/RoleContext';
+import { useRouter } from 'expo-router';
 
 export default function TrustedScreen() {
+  const router = useRouter();
+  const { logout } = useRole();
   const [lang, setLang] = useState(globalStore.getLanguage());
   const [trustedList, setTrustedList] = useState(globalStore.getTrustedPeople());
   const [isModalVisible, setIsModalVisible] = useState(false);
@@ -19,6 +24,18 @@ export default function TrustedScreen() {
       setTrustedList([...globalStore.getTrustedPeople()]);
     });
   }, []);
+
+  const handleLogout = () => {
+    if (Platform.OS === 'web') {
+      logout();
+      router.replace('/landing');
+      return;
+    }
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Logout', style: 'destructive', onPress: () => { logout(); router.replace('/landing'); } },
+    ]);
+  };
 
   const t = {
     hi: {
@@ -181,6 +198,10 @@ export default function TrustedScreen() {
         </View>
       </ScrollView>
 
+      <TouchableOpacity activeOpacity={0.8} style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutText}>Logout</Text>
+      </TouchableOpacity>
+
       {/* Add Helper Modal */}
       <Modal
         visible={isModalVisible}
@@ -292,17 +313,7 @@ const styles = StyleSheet.create({
     marginBottom: 25,
     borderWidth: 2,
     borderColor: '#1B5E20',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.15,
-        shadowRadius: 5,
-      },
-      android: {
-        elevation: 4,
-      },
-    }),
+    ...shadow({ color: '#000', offset: { width: 0, height: 4 }, opacity: 0.15, radius: 5, elevation: 4 }),
   },
   addIcon: {
     marginRight: 10,
@@ -323,17 +334,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     borderWidth: 2,
     borderColor: '#E0E0E0',
-    ...Platform.select({
-      ios: {
-        shadowColor: '#000',
-        shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.08,
-        shadowRadius: 4,
-      },
-      android: {
-        elevation: 2,
-      },
-    }),
+    ...shadow({ color: '#000', offset: { width: 0, height: 2 }, opacity: 0.08, radius: 4, elevation: 2 }),
   },
   avatarContainer: {
     width: 60,
@@ -500,5 +501,18 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontSize: 18,
     fontWeight: 'bold',
+  },
+  logoutButton: {
+    alignItems: 'center',
+    backgroundColor: '#DC2626',
+    borderRadius: 8,
+    justifyContent: 'center',
+    marginTop: 16,
+    minHeight: 52,
+  },
+  logoutText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '900',
   },
 });

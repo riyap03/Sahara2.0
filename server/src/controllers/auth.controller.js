@@ -14,6 +14,21 @@ const register = async (req, res) => {
       });
     }
 
+    const phoneRegex = /^[6-9]\d{9}$/;
+    if (!phoneRegex.test(phone)) {
+      return res.status(400).json({
+        success: false,
+        message: 'Please enter a valid 10-digit phone number'
+      });
+    }
+
+    if (password.length < 6) {
+      return res.status(400).json({
+        success: false,
+        message: 'Password must be at least 6 characters'
+      });
+    }
+
     const existingUser = await User.findOne({
       $or: [{ email }, { phone }]
     });
@@ -51,6 +66,7 @@ const register = async (req, res) => {
       }
     });
   } catch (error) {
+    console.error('Auth register error:', error);
     res.status(500).json({
       success: false,
       message: error.message
@@ -60,14 +76,26 @@ const register = async (req, res) => {
 
 const login = async (req, res) => {
   try {
-    const { email, password } = req.body;
+    const { email, phone, password } = req.body;
 
-    const user = await User.findOne({ email }).select('+password');
+    if ((!email && !phone) || !password) {
+      return res.status(400).json({
+        success: false,
+        message: 'Phone/email and password are required'
+      });
+    }
+
+    const user = await User.findOne({
+      $or: [
+        ...(email ? [{ email }] : []),
+        ...(phone ? [{ phone }] : [])
+      ]
+    }).select('+password');
 
     if (!user) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password'
+        message: 'Invalid credentials'
       });
     }
 
@@ -76,7 +104,7 @@ const login = async (req, res) => {
     if (!passwordMatch) {
       return res.status(401).json({
         success: false,
-        message: 'Invalid email or password'
+        message: 'Invalid credentials'
       });
     }
 

@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import {
+  Alert,
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -11,9 +13,12 @@ import {
 } from 'react-native';
 import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useRole } from '../context/RoleContext';
+import { shadow } from '../../constants/theme';
+import { useRouter } from 'expo-router';
 
 export default function TabTwoScreen() {
-  const { role } = useRole();
+  const router = useRouter();
+  const { role, logout } = useRole();
 
   const [activeTab, setActiveTab] = useState<'network' | 'profile' | 'history' | 'notifications'>('network');
   const [volunteerTab, setVolunteerTab] = useState<'tasks' | 'trust' | 'preferences'>('tasks');
@@ -21,6 +26,18 @@ export default function TabTwoScreen() {
 
   const handleCall = (phone: string) => {
     Linking.openURL(`tel:${phone}`).catch(() => alert('Could not initiate call'));
+  };
+
+  const handleLogout = () => {
+    if (Platform.OS === 'web') {
+      logout();
+      router.replace('/landing');
+      return;
+    }
+    Alert.alert('Logout', 'Are you sure you want to logout?', [
+      { text: 'Cancel', style: 'cancel' },
+      { text: 'Logout', style: 'destructive', onPress: () => { logout(); router.replace('/landing'); } },
+    ]);
   };
 
   return (
@@ -69,7 +86,7 @@ export default function TabTwoScreen() {
       )}
 
       {/* ==================== VOLUNTEER MODE DETAIL HEADER ==================== */}
-      {role === 'volunteer' && (
+      {(role === 'volunteer' || role === 'provider') && (
         <View style={styles.tabContainerVolunteer}>
           <TouchableOpacity
             style={[styles.tabButtonVolunteer, volunteerTab === 'tasks' && styles.activeTabButtonVolunteer]}
@@ -420,7 +437,7 @@ export default function TabTwoScreen() {
         {/* ========================================================== */}
         {/* ==================== VOLUNTEER SCHEMAS ==================== */}
         {/* ========================================================== */}
-        {role === 'volunteer' && (
+        {(role === 'volunteer' || role === 'provider') && (
           <View>
             {/* 0. EMERGENCY ALERT MODAL OVERLAY IN VOLUNTEER CONTEXT */}
             <View style={styles.emergencyTriggerTesterCard}>
@@ -654,6 +671,9 @@ export default function TabTwoScreen() {
         )}
 
       </ScrollView>
+      <TouchableOpacity activeOpacity={0.8} style={styles.logoutButton} onPress={handleLogout}>
+        <Text style={styles.logoutText}>Logout</Text>
+      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -743,11 +763,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     borderRadius: 16,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    ...shadow({ color: '#000', offset: { width: 0, height: 1 }, opacity: 0.05, radius: 2, elevation: 2 }),
   },
   contactHeader: {
     flexDirection: 'row',
@@ -845,11 +861,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     borderRadius: 16,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    ...shadow({ color: '#000', offset: { width: 0, height: 1 }, opacity: 0.05, radius: 2, elevation: 2 }),
   },
   profileSectionTitle: {
     fontSize: 15,
@@ -888,11 +900,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     borderRadius: 16,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    ...shadow({ color: '#000', offset: { width: 0, height: 1 }, opacity: 0.05, radius: 2, elevation: 2 }),
   },
   historyCardHeader: {
     flexDirection: 'row',
@@ -946,11 +954,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginTop: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    ...shadow({ color: '#000', offset: { width: 0, height: 1 }, opacity: 0.05, radius: 2, elevation: 2 }),
   },
   simpleHistoryHeader: {
     fontSize: 14,
@@ -985,11 +989,7 @@ const styles = StyleSheet.create({
     padding: 12,
     flexDirection: 'row',
     gap: 12,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    ...shadow({ color: '#000', offset: { width: 0, height: 1 }, opacity: 0.05, radius: 2, elevation: 2 }),
   },
   notificationDot: {
     width: 8,
@@ -1050,11 +1050,7 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 16,
     marginBottom: 16,
-    shadowColor: '#DC2626',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 6,
-    elevation: 4,
+    ...shadow({ color: '#DC2626', offset: { width: 0, height: 4 }, opacity: 0.3, radius: 6, elevation: 4 }),
   },
   volunteerEmergencyHeader: {
     flexDirection: 'row',
@@ -1145,11 +1141,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    ...shadow({ color: '#000', offset: { width: 0, height: 1 }, opacity: 0.05, radius: 2, elevation: 2 }),
   },
   activeTaskRowHead: {
     flexDirection: 'row',
@@ -1194,11 +1186,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     padding: 12,
     marginBottom: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    ...shadow({ color: '#000', offset: { width: 0, height: 1 }, opacity: 0.05, radius: 2, elevation: 2 }),
   },
   completedTaskHead: {
     flexDirection: 'row',
@@ -1231,11 +1219,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     borderRadius: 16,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    ...shadow({ color: '#000', offset: { width: 0, height: 1 }, opacity: 0.05, radius: 2, elevation: 2 }),
   },
   metricBigBox: {
     alignItems: 'center',
@@ -1306,11 +1290,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#FFF',
     borderRadius: 16,
     padding: 16,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
-    shadowRadius: 2,
-    elevation: 2,
+    ...shadow({ color: '#000', offset: { width: 0, height: 1 }, opacity: 0.05, radius: 2, elevation: 2 }),
     marginBottom: 16,
   },
   prefSectionTitle: {
@@ -1355,5 +1335,20 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '700',
     fontSize: 14,
+  },
+  logoutButton: {
+    alignItems: 'center',
+    backgroundColor: '#DC2626',
+    borderRadius: 8,
+    justifyContent: 'center',
+    marginTop: 16,
+    marginHorizontal: 16,
+    marginBottom: 24,
+    minHeight: 52,
+  },
+  logoutText: {
+    color: '#FFFFFF',
+    fontSize: 16,
+    fontWeight: '900',
   },
 });

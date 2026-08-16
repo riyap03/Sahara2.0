@@ -10,13 +10,17 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import { IconSymbol } from '@/components/ui/icon-symbol';
 import { useRouter } from 'expo-router';
-import { globalStore, ConnectedSenior } from '../../constants/store';
 import { useRole } from '../context/RoleContext';
+import { globalStore, ConnectedSenior } from '../../constants/store';
+import { shadow } from '../../constants/theme';
 
-type Step = 'choice' | 'create' | 'connect' | 'success';
+type Step = 'choice' | 'create' | 'connect' | 'success' | 'login';
 
-const API_URL = 'http://localhost:5000/api';
+import { API_BASE_URL } from '../../constants/api';
+
+const API_URL = API_BASE_URL;
 const relationships = ['Daughter', 'Son', 'Spouse', 'Other'];
 
 export default function FamilyOnboardingScreen() {
@@ -25,14 +29,19 @@ export default function FamilyOnboardingScreen() {
   const [step, setStep] = useState<Step>('choice');
   const [name, setName] = useState('');
   const [phone, setPhone] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [relationship, setRelationship] = useState('Daughter');
   const [familyCode, setFamilyCode] = useState('');
   const [connectedSenior, setConnectedSenior] = useState<ConnectedSenior | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const [loginPhone, setLoginPhone] = useState('');
+  const [loginPassword, setLoginPassword] = useState('');
+  const [showLoginPassword, setShowLoginPassword] = useState(false);
 
   const createAccount = async () => {
-    if (!name.trim() || !phone.trim()) {
-      Alert.alert('Missing Info', 'Please fill in your account details.');
+    if (!name.trim() || phone.trim().length !== 10 || password.trim().length < 6) {
+      Alert.alert('Missing Info', 'Please enter a valid 10-digit phone and a 6+ digit password.');
       return;
     }
 
@@ -43,9 +52,9 @@ export default function FamilyOnboardingScreen() {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: name.trim(),
-          email: `${phone.trim()}@gharkabackup.local`,
+          email: `${phone.trim()}@gharkabackup.com`,
           phone: phone.trim(),
-          password: 'password123',
+          password: password.trim(),
           role: 'family',
         }),
       });
@@ -137,15 +146,120 @@ export default function FamilyOnboardingScreen() {
     setStep('success');
   };
 
+  const handleLogin = async () => {
+    if (!loginPhone.trim() || loginPassword.trim().length < 6) {
+      Alert.alert('Missing Info', 'Please enter phone number and a 6+ digit password.');
+      return;
+    }
+
+    setIsLoading(true);
+    try {
+      const response = await fetch(`${API_URL}/auth/login`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: loginPhone.trim(), password: loginPassword.trim() }),
+      });
+      const data = await response.json();
+
+      if (!data.success) {
+        Alert.alert('Login Failed', data.message || 'Invalid credentials.');
+        return;
+      }
+
+      setRole('family');
+      setToken(data.token);
+      setUser(data.user);
+      globalStore.setRole('family');
+      globalStore.setToken(data.token);
+      globalStore.setUser(data.user);
+      router.replace('/(tabs)');
+    } catch {
+      Alert.alert('Error', 'Could not connect to server.');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  if (step === 'login') {
+    return (
+      <Screen>
+        <Back onPress={() => setStep('choice')} />
+        <Text style={styles.title}>Login</Text>
+        <Text style={styles.subtitle}>Access your existing Sahara account</Text>
+        <View style={styles.field}>
+          <Text style={styles.label}>Phone Number</Text>
+          <TextInput
+            style={styles.input}
+            value={loginPhone}
+            onChangeText={setLoginPhone}
+            placeholder="10-digit mobile number"
+            placeholderTextColor="#9CA3AF"
+            keyboardType="phone-pad"
+            maxLength={10}
+          />
+          {loginPhone.length > 0 && loginPhone.length !== 10 && (
+            <Text style={styles.errorText}>Please enter a valid 10-digit phone number</Text>
+          )}
+        </View>
+        <View style={styles.field}>
+          <Text style={styles.label}>Password</Text>
+          <View style={styles.passwordRow}>
+            <TextInput
+              style={styles.input}
+              value={loginPassword}
+              onChangeText={setLoginPassword}
+              placeholderTextColor="#9CA3AF"
+              secureTextEntry={!showLoginPassword}
+            />
+            <TouchableOpacity onPress={() => setShowLoginPassword(!showLoginPassword)} style={styles.eyeButton}>
+              <IconSymbol name={showLoginPassword ? 'eye-off' : 'eye'} size={20} color="#6B7280" />
+            </TouchableOpacity>
+          </View>
+        </View>
+        <Button title={isLoading ? 'Logging in...' : 'Login'} onPress={handleLogin} disabled={isLoading} />
+      </Screen>
+    );
+  }
+
   if (step === 'create') {
     return (
       <Screen>
         <Back onPress={() => setStep('choice')} />
         <Text style={styles.title}>Create Your Account</Text>
-        <FormField label="Name" value={name} onChangeText={setName} />
-        <FormField label="Phone / Email" value={phone} onChangeText={setPhone} keyboardType="phone-pad" />
-        <RelationshipPicker value={relationship} onChange={setRelationship} />
-        <Button title={isLoading ? 'Creating...' : 'Continue'} onPress={createAccount} disabled={isLoading} />
+      <FormField label="Name" value={name} onChangeText={setName} />
+      <View style={styles.field}>
+        <Text style={styles.label}>Phone Number</Text>
+        <TextInput
+          style={styles.input}
+          value={phone}
+          onChangeText={setPhone}
+          placeholder="10-digit mobile number"
+          placeholderTextColor="#9CA3AF"
+          keyboardType="phone-pad"
+          maxLength={10}
+        />
+        {phone.length > 0 && phone.length !== 10 && (
+          <Text style={styles.errorText}>Please enter a valid 10-digit phone number</Text>
+        )}
+      </View>
+      <View style={styles.field}>
+        <Text style={styles.label}>Password</Text>
+        <View style={styles.passwordRow}>
+          <TextInput
+            style={styles.input}
+            value={password}
+            onChangeText={setPassword}
+            placeholderTextColor="#9CA3AF"
+            secureTextEntry={!showPassword}
+          />
+          <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={styles.eyeButton}>
+            <IconSymbol name={showPassword ? 'eye-off' : 'eye'} size={20} color="#6B7280" />
+          </TouchableOpacity>
+        </View>
+        <Text style={styles.passwordNote}>Password must be at least 6 characters</Text>
+      </View>
+      <RelationshipPicker value={relationship} onChange={setRelationship} />
+      <Button title={isLoading ? 'Creating...' : 'Continue'} onPress={createAccount} disabled={isLoading} />
       </Screen>
     );
   }
@@ -200,6 +314,12 @@ export default function FamilyOnboardingScreen() {
         <Text style={styles.optionIcon}>✨</Text>
         <Text style={styles.optionTitle}>Create Family Account</Text>
         <Text style={styles.optionSubtitle}>I do not have an account</Text>
+      </TouchableOpacity>
+
+      <TouchableOpacity activeOpacity={0.86} style={[styles.optionCard, styles.loginOptionCard]} onPress={() => setStep('login')}>
+        <Text style={styles.optionIcon}>🔑</Text>
+        <Text style={styles.optionTitle}>Login</Text>
+        <Text style={styles.optionSubtitle}>I already have an account</Text>
       </TouchableOpacity>
     </Screen>
   );
@@ -307,11 +427,7 @@ const styles = StyleSheet.create({
     marginTop: 14,
     minHeight: 142,
     padding: 22,
-    shadowColor: '#0F172A',
-    shadowOffset: { width: 0, height: 3 },
-    shadowOpacity: 0.08,
-    shadowRadius: 8,
-    elevation: 3,
+    ...shadow({ color: '#0F172A', offset: { width: 0, height: 3 }, opacity: 0.08, radius: 8, elevation: 3 }),
   },
   optionIcon: {
     fontSize: 36,
@@ -329,6 +445,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     marginTop: 6,
     textAlign: 'center',
+  },
+  loginOptionCard: {
+    borderColor: '#2563EB',
   },
   field: {
     marginBottom: 18,
@@ -349,6 +468,26 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     minHeight: 54,
     paddingHorizontal: 14,
+  },
+  passwordRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  eyeButton: {
+    padding: 8,
+  },
+  passwordNote: {
+    color: '#6B7280',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 6,
+  },
+  errorText: {
+    color: '#DC2626',
+    fontSize: 12,
+    fontWeight: '600',
+    marginTop: 6,
   },
   codeInput: {
     fontSize: 28,
